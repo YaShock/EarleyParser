@@ -1,0 +1,24 @@
+GAMMA -> Command
+Command -> Transform | Generate | Request | LoadFile
+Load -> load StringTerm
+Generate -> GenerateTerm 'word' 'cloud'
+Transform -> Modify | Delete
+Modify -> ModTerm TextObject 'to' TransformFunction
+Modify -> ModTerm 'to' TransformFunction
+TransformFunction -> FunctionLower | FunctionUpper
+FuntionLower -> 'lower case' | 'lower'
+FuntionUpper -> 'upper case' | 'upper'
+Delete -> DelTerm Object
+Request -> ReqTerm Object
+Object -> 'numbers' | 'punctuation' | Stopwords | WordList | WhiteSpaces | FreqWords
+SparseWords -> WordTerm 'sparsity' FloatTerm
+FreqWords -> WordTerm 'frequency between' FloatTerm 'and' FloatTerm
+StopWords -> Language 'stopwords' | Language 'stop words'
+Language -> 'english' | 'german' | 'hungarian'
+TextObject -> 'text' | 'document'
+ModTerm -> 'modify' | 'transform' | 'convert' | 'delete' | 'remove' | 'strip' | 'take out' | 'get' | 'find' | 'what are' | 'what is'
+WordTerm -> 'words' | 'terms'
+GenerateTerm -> 'create' | 'generate' | 'make'
+WhiteSpaces -> 'white space' | 'whitespace'
+WordList -> WordTerm W
+W -> W W | StringTerm

@@ -1,0 +1,9 @@
+Python chart parser API
+	User defines cf language (text file)
+		parser.loadGrammar(filename)
+	User determines how to tokenize (by character, whitespace, etc.)
+	User gives the parser a string to parse
+		parser.parse("Hello I am a cf grammar parser")
+	Parse function returns a set of abstract trees
+		In-built tree class
+		Trees contain the rules as nodes and tokens as leaves
