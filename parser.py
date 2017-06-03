@@ -153,13 +153,16 @@ class Tree(object):
 
 class EarleyParser(object):
     """docstring for EarleyParser"""
-    def __init__(self, topRule):
-        self.topRule = topRule
+    def __init__(self):
+        self.topRule = None
         self.grammar = set()
         self.terminals = set()
+        self.variables = {}
 
     def add(self, rule):
         self.grammar.add(rule)
+        if self.topRule is None:
+            self.topRule = rule
         for term in rule.production.terms:
             if not isinstance(term, Variable):
                 self.terminals.add(term)
@@ -178,7 +181,7 @@ class EarleyParser(object):
         self.__init_states(text)
         self.state_list[0].add(State(self.topRule, 0, 0, 0))
         for k in range(len(self.tokens)+1):
-            print("\nk = %d" % k)
+            #print("\nk = %d" % k)
             active = set(self.state_list[k])
             seen = set(self.state_list[k])
             while active:
@@ -192,9 +195,9 @@ class EarleyParser(object):
                         self.complete(state, k)
                 seen |= active
                 active = self.state_list[k]-seen
-            print()
-            for state in self.state_list[k]:
-                print(state)
+            # print()
+            # for state in self.state_list[k]:
+            #     print(state)
         result = []
         for st in self.state_list[-1]:
             if st.rule == self.topRule:
@@ -224,11 +227,30 @@ class EarleyParser(object):
 
     def read_file(self, file):
         for line in file:
-            print(line)
+            self.__parse_rule(line)
 
     def __parse_rule(self, line):
-        l = line.split('->')
-
+        lst = []
+        if ' -> ' in line:
+            lst = line.split(' -> ')
+        else:
+            lst = line.split('->')
+        if len(lst) != 2:
+            raise ValueError('Invalid rule syntax: ->')
+        if ' ' in line[0]:
+            raise ValueError('Invalud rule syntax: space in the variable name')
+        variable = self.variables.setdefault(lst[0], Variable(lst[0]))
+        rules = lst[1].split('|')
+        for rule in rules:
+            terms = rule.split()
+            termList = []
+            for term in terms:
+                if term[0] == '\'' and term[-1] == '\'':
+                    termList.append(term.strip('\''))
+                else:
+                    var = self.variables.setdefault(term, Variable(term))
+                    termList.append(var)
+            self.add(Rule(variable, Production(*termList)))
 
     def construct_tree(self, state, level=0):
         tree = Tree()
@@ -245,98 +267,14 @@ class EarleyParser(object):
         return tree
 
 
-GAMMA = Variable("GAMMA")
-Command = Variable("Command")
-Transform = Variable("Transform")
-Generate = Variable("Generate")
-LoadFile = Variable("LoadFile")
-Modify = Variable("Modify")
-Request = Variable("Request")
-TextObject = Variable("TextObject")
-ModTerm = Variable("ModTerm")
-DelTerm = Variable("DelTerm")
-ReqTerm = Variable("ReqTerm")
-TrasformFunction = Variable("TrasformFunction")
-FunctionLower = Variable("FunctionLower")
-FunctionUpper = Variable("FunctionUpper")
-Delete = Variable("Delete")
-Object = Variable("Object")
-WordList = Variable("WordList")
-W = Variable("W")
-SparseWords = Variable("SparseWords")
-FreqWords = Variable("FreqWords")
-Stopwords = Variable("Stopwords")
-Language = Variable("Language")
-WordTerm = Variable("WordTerm")
-GenerateTerm = Variable("GenerateTerm")
-WhiteSpaces = Variable("WhiteSpaces")
+parser = EarleyParser()
 
-parser = EarleyParser(Rule(GAMMA, Production(Command)))
+file = open('cf.txt')
+parser.read_file(file)
 
-parser.add(Rule(Command, Production(Transform)))
-parser.add(Rule(Command, Production(Generate)))
-parser.add(Rule(Command, Production(Request)))
-parser.add(Rule(Command, Production(LoadFile)))
-
-parser.add(Rule(LoadFile, Production('load', StringTerm())))
-parser.add(Rule(Generate, Production(GenerateTerm, 'word', 'cloud')))
-
-parser.add(Rule(Transform, Production(Modify)))
-parser.add(Rule(Transform, Production(Delete)))
-
-parser.add(Rule(Modify, Production(ModTerm, TextObject, "to", TrasformFunction)))
-parser.add(Rule(Modify, Production(ModTerm, "to", TrasformFunction)))
-parser.add(Rule(TrasformFunction, Production(FunctionLower)))
-parser.add(Rule(TrasformFunction, Production(FunctionUpper)))
-parser.add(Rule(FunctionLower, Production("lower", "case")))
-parser.add(Rule(FunctionLower, Production("lower")))
-parser.add(Rule(FunctionUpper, Production("upper", "case")))
-parser.add(Rule(FunctionUpper, Production("upper")))
-
-parser.add(Rule(Delete, Production(DelTerm, Object)))
-parser.add(Rule(Request, Production(ReqTerm, Object)))
-
-parser.add(Rule(Object, Production("numbers")))
-parser.add(Rule(Object, Production("punctuation")))
-parser.add(Rule(Object, Production(Stopwords)))
-parser.add(Rule(Object, Production(WordList)))
-parser.add(Rule(Object, Production(WhiteSpaces)))
-parser.add(Rule(Object, Production(SparseWords)))
-parser.add(Rule(Object, Production(FreqWords)))
-parser.add(Rule(SparseWords, Production(WordTerm, "sparsity", FloatTerm())))
-parser.add(Rule(FreqWords, Production(WordTerm, "frequency", "between", FloatTerm(), "and", FloatTerm())))
-parser.add(Rule(Stopwords, Production(Language, "stopwords")))
-parser.add(Rule(Stopwords, Production(Language, "stop", "words")))
-parser.add(Rule(Language, Production("english")))
-parser.add(Rule(Language, Production("german")))
-parser.add(Rule(Language, Production("hungarian")))
-parser.add(Rule(TextObject, Production("text")))
-parser.add(Rule(TextObject, Production("document")))
-parser.add(Rule(ModTerm, Production('modify')))
-parser.add(Rule(ModTerm, Production('transform')))
-parser.add(Rule(ModTerm, Production('convert')))
-parser.add(Rule(DelTerm, Production('delete')))
-parser.add(Rule(DelTerm, Production('remove')))
-parser.add(Rule(DelTerm, Production('strip')))
-parser.add(Rule(DelTerm, Production('take', 'out')))
-parser.add(Rule(ReqTerm, Production('get')))
-parser.add(Rule(ReqTerm, Production('find')))
-parser.add(Rule(ReqTerm, Production('what', 'are')))
-parser.add(Rule(ReqTerm, Production('what', 'is')))
-parser.add(Rule(WordTerm, Production('words')))
-parser.add(Rule(WordTerm, Production('terms')))
-parser.add(Rule(GenerateTerm, Production('create')))
-parser.add(Rule(GenerateTerm, Production('generate')))
-parser.add(Rule(GenerateTerm, Production('make')))
-parser.add(Rule(WhiteSpaces, Production('white', 'space')))
-parser.add(Rule(WhiteSpaces, Production('whitespace')))
-parser.add(Rule(WordList, Production(WordTerm, W)))
-parser.add(Rule(W, Production(W, W)))
-parser.add(Rule(W, Production(StringTerm())))
+for rule in parser.grammar:
+    print(rule)
 
 lst = parser.parse("convert to upper case")
 for t in lst:
     t.print()
-
-file = open('cf.txt')
-parser.read_file(file)
