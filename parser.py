@@ -144,8 +144,6 @@ class Tree(object):
     def add(self, child):
         self.children.append(child)
     def print(self, level=0):
-        if level == 9:
-            return
         text = "\t"*level+str(self.data)
         print(text)
         for child in self.children:
@@ -175,9 +173,9 @@ class Grammar(object):
 
     def read_file(self, file):
         for line in file:
-            self.__parse_rule(line)
+            self.parse_rule(line)
 
-    def __parse_rule(self, line):
+    def parse_rule(self, line):
         lst = []
         if ' -> ' in line:
             lst = line.split(' -> ')
@@ -187,19 +185,23 @@ class Grammar(object):
             raise ValueError('Invalid rule syntax: ->')
         if ' ' in line[0]:
             raise ValueError('Invalud rule syntax: space in the variable name')
-        variable = self.variables.setdefault(lst[0], Variable(lst[0]))
+        var_name = lst[0].strip()
+        variable = self.variables.setdefault(var_name, Variable(var_name))
         rules = lst[1].split('|')
         for rule in rules:
             terms = rule.split()
-            termList = []
+            term_list = []
             for term in terms:
                 if term[0] == '\'' and term[-1] == '\'':
-                    termList.append(term.strip('\''))
+                    term_list.append(term.strip('\''))
+                elif term == 'StringTerm':
+                    term_list.append(StringTerm())
+                elif term == 'FloatTerm':
+                    term_list.append(FloatTerm())
                 else:
                     var = self.variables.setdefault(term, Variable(term))
-                    termList.append(var)
-            self.add_rule(Rule(variable, Production(*termList)))
-        
+                    term_list.append(var)
+            self.add_rule(Rule(variable, Production(*term_list)))
 
 class EarleyParser(object):
     """docstring for EarleyParser"""
@@ -220,7 +222,7 @@ class EarleyParser(object):
         self.__init_states(text)
         self.state_list[0].add(State(self.grammar.topRule, 0, 0, 0))
         for k in range(len(self.tokens)+1):
-            #print("\nk = %d" % k)
+            print("\nk = %d" % k)
             active = set(self.state_list[k])
             seen = set(self.state_list[k])
             while active:
@@ -234,9 +236,9 @@ class EarleyParser(object):
                         self.complete(state, k)
                 seen |= active
                 active = self.state_list[k]-seen
-            # print()
-            # for state in self.state_list[k]:
-            #     print(state)
+            print()
+            for state in self.state_list[k]:
+                print(state)
         result = []
         for st in self.state_list[-1]:
             if st.rule == self.grammar.topRule:
@@ -281,9 +283,9 @@ grammar.read_file(file)
 
 parser = EarleyParser(grammar)
 
-for rule in grammar.rules:
-    print(rule)
+# for rule in grammar.rules:
+#     print(rule)
 
-lst = parser.parse("convert to upper case")
+lst = parser.parse("remove words lel kek lol")
 for t in lst:
     t.print()
