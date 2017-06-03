@@ -151,79 +151,27 @@ class Tree(object):
         for child in self.children:
             child.print(level+1)
 
-class EarleyParser(object):
-    """docstring for EarleyParser"""
-    def __init__(self):
-        self.topRule = None
-        self.grammar = set()
+class Grammar(object):
+    """docstring for Grammar"""
+    def __init__(self, topRule=None):
+        self.topRule = topRule
+        self.rules = set()
         self.terminals = set()
         self.variables = {}
 
-    def add(self, rule):
-        self.grammar.add(rule)
+    def __iter__(self):
+        return iter(self.rules)
+
+    def add_rule(self, rule):
+        self.rules.add(rule)
         if self.topRule is None:
             self.topRule = rule
         for term in rule.production.terms:
             if not isinstance(term, Variable):
                 self.terminals.add(term)
 
-    def __init_states(self, text):
-        self.state_list = []
-        self.text = text
-        for k in range(len(self.tokens)+1):
-            self.state_list.append(set())
-
-    def tokenize(self, text):
-        self.tokens = text.split(' ')
-
-    def parse(self, text):
-        self.tokenize(text)
-        self.__init_states(text)
-        self.state_list[0].add(State(self.topRule, 0, 0, 0))
-        for k in range(len(self.tokens)+1):
-            #print("\nk = %d" % k)
-            active = set(self.state_list[k])
-            seen = set(self.state_list[k])
-            while active:
-                for state in active:
-                    if not state.finished():
-                        if not self.is_terminal(state.next()):
-                            self.predict(state, k)
-                        else:
-                            self.scan(state, k)
-                    else:
-                        self.complete(state, k)
-                seen |= active
-                active = self.state_list[k]-seen
-            # print()
-            # for state in self.state_list[k]:
-            #     print(state)
-        result = []
-        for st in self.state_list[-1]:
-            if st.rule == self.topRule:
-                result.append(self.construct_tree(st))
-        return result
-
     def is_terminal(self, token):
         return token in self.terminals
-
-    def predict(self, state, k):
-        for rule in self.grammar:
-            if state.next() == rule.variable:
-                self.state_list[k].add(State(rule, 0, k, k))
-
-    def scan(self, state, k):
-        if k >= len(self.tokens):
-            return
-        if state.next() == self.tokens[k]:
-            self.state_list[k+1].add(State(copy.deepcopy(state.rule), state.dotPos+1, state.orig_pos, k+1, state.back_pointers))
-
-    def complete(self, state, k):
-        for s in self.state_list[state.orig_pos]:
-            if s.next() == state.rule.variable:
-                newState = State(s.rule, s.dotPos+1, s.orig_pos, k, s.back_pointers)
-                newState.back_pointers.append(state)
-                self.state_list[k].add(newState)
 
     def read_file(self, file):
         for line in file:
@@ -250,7 +198,68 @@ class EarleyParser(object):
                 else:
                     var = self.variables.setdefault(term, Variable(term))
                     termList.append(var)
-            self.add(Rule(variable, Production(*termList)))
+            self.add_rule(Rule(variable, Production(*termList)))
+        
+
+class EarleyParser(object):
+    """docstring for EarleyParser"""
+    def __init__(self, grammar):
+        self.grammar = grammar
+
+    def __init_states(self, text):
+        self.state_list = []
+        self.text = text
+        for k in range(len(self.tokens)+1):
+            self.state_list.append(set())
+
+    def tokenize(self, text):
+        self.tokens = text.split(' ')
+
+    def parse(self, text):
+        self.tokenize(text)
+        self.__init_states(text)
+        self.state_list[0].add(State(self.grammar.topRule, 0, 0, 0))
+        for k in range(len(self.tokens)+1):
+            #print("\nk = %d" % k)
+            active = set(self.state_list[k])
+            seen = set(self.state_list[k])
+            while active:
+                for state in active:
+                    if not state.finished():
+                        if not self.grammar.is_terminal(state.next()):
+                            self.predict(state, k)
+                        else:
+                            self.scan(state, k)
+                    else:
+                        self.complete(state, k)
+                seen |= active
+                active = self.state_list[k]-seen
+            # print()
+            # for state in self.state_list[k]:
+            #     print(state)
+        result = []
+        for st in self.state_list[-1]:
+            if st.rule == self.grammar.topRule:
+                result.append(self.construct_tree(st))
+        return result
+
+    def predict(self, state, k):
+        for rule in self.grammar:
+            if state.next() == rule.variable:
+                self.state_list[k].add(State(rule, 0, k, k))
+
+    def scan(self, state, k):
+        if k >= len(self.tokens):
+            return
+        if state.next() == self.tokens[k]:
+            self.state_list[k+1].add(State(copy.deepcopy(state.rule), state.dotPos+1, state.orig_pos, k+1, state.back_pointers))
+
+    def complete(self, state, k):
+        for s in self.state_list[state.orig_pos]:
+            if s.next() == state.rule.variable:
+                newState = State(s.rule, s.dotPos+1, s.orig_pos, k, s.back_pointers)
+                newState.back_pointers.append(state)
+                self.state_list[k].add(newState)
 
     def construct_tree(self, state, level=0):
         tree = Tree()
@@ -259,20 +268,20 @@ class EarleyParser(object):
         for i in range(len(state.rule.production)):
             node = Tree()
             if state.back_pointers:
-                if not self.is_terminal(state.rule.production[i]):
+                if not self.grammar.is_terminal(state.rule.production[i]):
                     node = self.construct_tree(state.back_pointers[j], level+1)
                     j += 1
             node.data = repr(state.rule.production[i])
             tree.add(node)
         return tree
 
-
-parser = EarleyParser()
-
+grammar = Grammar()
 file = open('cf.txt')
-parser.read_file(file)
+grammar.read_file(file)
 
-for rule in parser.grammar:
+parser = EarleyParser(grammar)
+
+for rule in grammar.rules:
     print(rule)
 
 lst = parser.parse("convert to upper case")
