@@ -1,4 +1,29 @@
 import copy
+import re
+
+class Term(object):
+    """docstring for Term"""
+    def __init__(self, matcher_text):
+        self.value = None
+        self.matcher_text = matcher_text
+    def __eq__(self, other):
+        if not isinstance(other, Term):
+            return False
+        return self.matcher_text == other.matcher_text
+    def __ne__(self, other):
+        return not (self == other)
+    def __hash__(self):
+        return hash(self.matcher_text)
+    def __repr__(self):
+        if self.value:
+            return "\'%s\'" % self.value
+        else:
+            return self.matcher_text
+    def part_of(self, token):
+        if re.match(self.matcher_text, token):
+            self.value = token
+            return True
+        return False    
 
 class Variable(object):
     """docstring for Variable"""
@@ -29,7 +54,6 @@ class Rule(object):
     def __hash__(self):
         return hash((self.variable, self.production))
 
-
 class Production(object):
     """docstring for Production"""
     def __init__(self, *terms):
@@ -52,58 +76,6 @@ class Production(object):
     def __getitem__(self, index):
         return self.terms[index]
 
-class FloatTerm(object):
-    index = 0
-    def __init__(self):
-        self.val = None
-        FloatTerm.index = FloatTerm.index + 1
-    def __eq__(self, other):
-        if isinstance(other, str):
-            try:
-                self.val = float(other)
-                return True
-            except ValueError:
-                return False
-        elif isinstance(other, FloatTerm):
-            return self.index == other.index
-        return False
-    def __ne__(self, other):
-        return not (self == other)
-    def __hash__(self):
-        return hash(__class__.__name__)
-    def __repr__(self):
-        if self.val:
-            return str(self.val)
-        else:
-            return __class__.__name__
-
-class StringTerm(object):
-    index = 0
-    def __init__(self):
-        self.val = None
-        StringTerm.index = StringTerm.index + 1
-        self.index = StringTerm.index
-    def __eq__(self, other):
-        if isinstance(other, str):
-            try:
-                float(other)
-                return False
-            except ValueError:
-                self.val = str(other)
-                return True
-        elif isinstance(other, StringTerm):
-            return self.index == other.index
-        return False
-    def __ne__(self, other):
-        return not (self == other)
-    def __hash__(self):
-        return hash((__class__.__name__, self.index))
-    def __repr__(self):
-        if self.val:
-            return str(self.val)
-        else:
-            return __class__.__name__
-
 class State(object):
     """docstring for State"""
     num = 0
@@ -119,7 +91,7 @@ class State(object):
         terms = [str(p) for p in self.rule.production]
         terms.insert(self.dotPos, u"$")
         pointers = " ".join(str(i.index) for i in self.back_pointers)
-        return "%d %-1s -> %-8s [%s-%s] [%-s]" % (self.index, self.rule.variable, " ".join(terms), self.orig_pos, self.end_pos, pointers)
+        return "%d. %-1s -> %-8s [%s-%s] [%-s]" % (self.index, self.rule.variable, " ".join(terms), self.orig_pos, self.end_pos, pointers)
     def __eq__(self, other):
         if not isinstance(other, State):
             return False
@@ -184,7 +156,7 @@ class Grammar(object):
         if len(lst) != 2:
             raise ValueError('Invalid rule syntax: ->')
         if ' ' in line[0]:
-            raise ValueError('Invalud rule syntax: space in the variable name')
+            raise ValueError('Invalid rule syntax: space in the variable name')
         var_name = lst[0].strip()
         variable = self.variables.setdefault(var_name, Variable(var_name))
         rules = lst[1].split('|')
@@ -193,11 +165,7 @@ class Grammar(object):
             term_list = []
             for term in terms:
                 if term[0] == '\'' and term[-1] == '\'':
-                    term_list.append(term.strip('\''))
-                elif term == 'StringTerm':
-                    term_list.append(StringTerm())
-                elif term == 'FloatTerm':
-                    term_list.append(FloatTerm())
+                    term_list.append(Term(term.strip('\'')))
                 else:
                     var = self.variables.setdefault(term, Variable(term))
                     term_list.append(var)
@@ -222,7 +190,7 @@ class EarleyParser(object):
         self.__init_states(text)
         self.state_list[0].add(State(self.grammar.topRule, 0, 0, 0))
         for k in range(len(self.tokens)+1):
-            print("\nk = %d" % k)
+            #print("\nk = %d" % k)
             active = set(self.state_list[k])
             seen = set(self.state_list[k])
             while active:
@@ -236,9 +204,9 @@ class EarleyParser(object):
                         self.complete(state, k)
                 seen |= active
                 active = self.state_list[k]-seen
-            print()
-            for state in self.state_list[k]:
-                print(state)
+            # print()
+            # for state in self.state_list[k]:
+            #     print(state)
         result = []
         for st in self.state_list[-1]:
             if st.rule == self.grammar.topRule:
@@ -253,7 +221,7 @@ class EarleyParser(object):
     def scan(self, state, k):
         if k >= len(self.tokens):
             return
-        if state.next() == self.tokens[k]:
+        if state.next().part_of(self.tokens[k]):
             self.state_list[k+1].add(State(copy.deepcopy(state.rule), state.dotPos+1, state.orig_pos, k+1, state.back_pointers))
 
     def complete(self, state, k):
@@ -286,6 +254,14 @@ parser = EarleyParser(grammar)
 # for rule in grammar.rules:
 #     print(rule)
 
-lst = parser.parse("remove words lel kek lol")
+lst = parser.parse('load whatever')
+for t in lst:
+    t.print()
+
+lst = parser.parse("get terms frequency between 1.5 and 4.8")
+for t in lst:
+    t.print()
+
+lst = parser.parse("delete words : lel sdjfhslhsljgk")
 for t in lst:
     t.print()

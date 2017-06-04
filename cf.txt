@@ -1,4 +1,4 @@
-GAMMA -> Command
+GAMMA 		-> 		Command
 Command 	->		Transform | Generate | Request | LoadFile
 LoadFile 	-> 		'load' StringTerm
 Generate 	-> 		GenerateTerm 'word' 'cloud'
@@ -22,5 +22,7 @@ ReqTerm -> 'get' | 'find' | 'what' 'are' | 'what' 'is'
 WordTerm -> 'words' | 'terms'
 GenerateTerm -> 'create' | 'generate' | 'make'
 WhiteSpaces -> 'white' 'space' | 'whitespace'
-WordList -> WordTerm W
+WordList -> WordTerm ':' W
 W -> W W | StringTerm
+StringTerm -> '[A-Za-z]*'
+FloatTerm -> '[0-9]*.?[0-9]+'
