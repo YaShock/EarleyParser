@@ -1,3 +1,4 @@
+//<delim>		->		'[,;]'
 GAMMA 		-> 		Command
 Command 	->		Transform | Generate | Request | LoadFile
 LoadFile 	-> 		'load' StringTerm

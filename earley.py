@@ -128,6 +128,7 @@ class Grammar(object):
         self.rules = set()
         self.terminals = set()
         self.variables = {}
+        self.delim = '\s'
 
     def __iter__(self):
         return iter(self.rules)
@@ -143,36 +144,8 @@ class Grammar(object):
     def is_terminal(self, token):
         return token in self.terminals
 
-    def read_file(self, file):
-        for line in file:
-            self.parse_rule(line)
-
-    def parse_rule(self, line):
-        lst = []
-        if ' -> ' in line:
-            lst = line.split(' -> ')
-        else:
-            lst = line.split('->')
-        if len(lst) != 2:
-            raise ValueError('Invalid rule syntax: ->')
-        if ' ' in line[0]:
-            raise ValueError('Invalid rule syntax: space in the variable name')
-        var_name = lst[0].strip()
-        variable = self.variables.setdefault(var_name, Variable(var_name))
-        rules = lst[1].split('|')
-        for rule in rules:
-            terms = rule.split()
-            term_list = []
-            for term in terms:
-                if term[0] == '\'' and term[-1] == '\'':
-                    term_list.append(Term(term.strip('\'')))
-                else:
-                    var = self.variables.setdefault(term, Variable(term))
-                    term_list.append(var)
-            self.add_rule(Rule(variable, Production(*term_list)))
-
-class EarleyParser(object):
-    """docstring for EarleyParser"""
+class Parser(object):
+    """docstring for Parser"""
     def __init__(self, grammar):
         self.grammar = grammar
 
@@ -183,7 +156,7 @@ class EarleyParser(object):
             self.state_list.append(set())
 
     def tokenize(self, text):
-        self.tokens = text.split(' ')
+        self.tokens = re.split(self.grammar.delim, text)
 
     def parse(self, text):
         self.tokenize(text)
@@ -244,24 +217,3 @@ class EarleyParser(object):
             node.data = repr(state.rule.production[i])
             tree.add(node)
         return tree
-
-grammar = Grammar()
-file = open('cf.txt')
-grammar.read_file(file)
-
-parser = EarleyParser(grammar)
-
-# for rule in grammar.rules:
-#     print(rule)
-
-lst = parser.parse('load whatever')
-for t in lst:
-    t.print()
-
-lst = parser.parse("get terms frequency between 1.5 and 4.8")
-for t in lst:
-    t.print()
-
-lst = parser.parse("delete words : lel sdjfhslhsljgk")
-for t in lst:
-    t.print()
