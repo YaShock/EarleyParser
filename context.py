@@ -1,4 +1,6 @@
 from grammar import Term, Variable, Rule, Production
+import string
+import re
 
 def contains_whitespace(s):
     return any([c in s for c in string.whitespace])
@@ -22,19 +24,34 @@ class ContextBuilder(object):
         else:
             self.parse_rule(var_name, lst[1])
 
-    def parse_rule(self, var_name, val, fn_enter=None, fn_exit=None):
+    def parse_rule(self, var_name, val):
+        lst = val.split('::=')
+        if len(lst) > 2:
+            raise ValueError('Invalid rule syntax: more than one ::=')
+        elif len(lst) == 2:
+            fn = lst[1].strip()
+            fn_enter = fn + '_enter'
+            fn_exit = fn + '_exit'
+        else:
+            fn_enter = None
+            fn_exit = None
+            
         variable = self.grammar.variables.setdefault(var_name, Variable(var_name))
-        rules = val.split('|')
+        rules = lst[0].split('|')
         for rule in rules:
             terms = rule.split()
             term_list = []
             for term in terms:
-                if term[0] == '\'' and term[-1] == '\'':
-                    term_list.append(Term(term.strip('\'')))
+                if term[0] == '\"' and term[-1] == '\"':
+                    term_list.append(Term(term.strip('\"')))
+                elif term[0] == '\'' and term[-1] == '\'':
+                    term_list.append(Term(re.escape(term.strip('\''))))
                 else:
                     var = self.grammar.variables.setdefault(term, Variable(term))
                     term_list.append(var)
-            self.grammar.add_rule(Rule(variable, Production(*term_list)), fn_enter, fn_exit)
+            r = Rule(variable, Production(*term_list))
+            self.grammar.add_rule(r)
+            self.generated_file.write('    dict[%i] = (semantics.%s, semantics.%s)\n' % (id(r), fn_enter, fn_exit))
 
     def parse_option(self, var_name, val):
         val = val.strip()
@@ -47,5 +64,10 @@ class ContextBuilder(object):
             raise ValueError('Invalid option syntax: unknown option name')
 
     def read_file(self, file):
+        self.generated_file = open('generated.py', 'w')
+        self.generated_file.write('import semantics\n')
+        self.generated_file.write('dict = {}\n')
+        self.generated_file.write('def create():\n')
         for line in file:
             self.parse_line(line)
+        self.generated_file.close()

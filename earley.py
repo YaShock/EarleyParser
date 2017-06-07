@@ -41,9 +41,6 @@ class Tree(object):
     def add(self, child):
         self.children.append(child)
     def print(self, level=0):
-        # if self.fn_enter:
-        #     text = "\t"*level+str(self.data)+' BACK'
-        # else:
         text = "\t"*level+str(self.data)
         print(text)
         for child in self.children:
