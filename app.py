@@ -1,9 +1,6 @@
 import earley, grammar, context, semantics
 
 def walk_tree(tree):
-    #[c for c in tree.children if c is not child]
-    #if hasattr(tree, 'fn_enter') and tree.fn_enter:
-        #print([c.data for c in tree.children if not grammar.is_terminal(c.data)])
     if tree.fn_enter:
         tree.fn_enter([c for c in tree.children])
     for child in tree.children:
@@ -37,7 +34,7 @@ for rule in grammar.rules:
     rule.fn_exit = d[1]
     #print('%i %s %s' % (id(rule), d[0], d[1]))
 
-lst = parser.parse('2 * 4 + 3 * 3 + 10')
+lst = parser.parse('2 / 4 - 3 * 3 + 10')
 for t in lst:
     t.print()
     walk_tree(t)

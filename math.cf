@@ -1,11 +1,8 @@
 P -> S ::= expr
-S -> S '+' M ::= sum
+S -> S OP_E M ::= sum
 S -> M ::= sum_unary
-M -> M '*' T ::= product
+M -> M OP_T T ::= product
 M -> T ::= product_unary
 T -> '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' ::= terminal
-//OP_E -> '+' | '-'
-//OP_T -> '*' | '/'
-//< expression > ::= < term > + < expression > | < term > - < expression > | < term >
-//< term > ::= < factor > * < term > | < factor > / < term > | < factor >
-//< factor > ::= (< expression >) | < float > | < var >
+OP_E -> '+' | '-' ::= operator_expr
+OP_T -> '*' | '/' ::= operator_term
