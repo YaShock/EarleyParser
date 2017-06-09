@@ -71,3 +71,11 @@ class ContextBuilder(object):
         for line in file:
             self.parse_line(line)
         self.generated_file.close()
+
+def walk_tree(tree):
+    if tree.fn_enter:
+        tree.fn_enter(tree.children)
+    for child in tree.children:
+        walk_tree(child)
+    if tree.fn_exit:
+        tree.fn_exit(tree.children)

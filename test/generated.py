@@ -1,0 +1,22 @@
+import semantics
+dict = {}
+def create():
+    dict[2641824784624] = (semantics.expr_enter, semantics.expr_exit)
+    dict[2641824784904] = (semantics.sum_enter, semantics.sum_exit)
+    dict[2641824784960] = (semantics.sum_unary_enter, semantics.sum_unary_exit)
+    dict[2641824785296] = (semantics.product_enter, semantics.product_exit)
+    dict[2641824785408] = (semantics.product_unary_enter, semantics.product_unary_exit)
+    dict[2641824786192] = (semantics.terminal_enter, semantics.terminal_exit)
+    dict[2641824786416] = (semantics.terminal_enter, semantics.terminal_exit)
+    dict[2641824786640] = (semantics.terminal_enter, semantics.terminal_exit)
+    dict[2641824786864] = (semantics.terminal_enter, semantics.terminal_exit)
+    dict[2641824787088] = (semantics.terminal_enter, semantics.terminal_exit)
+    dict[2641824787312] = (semantics.terminal_enter, semantics.terminal_exit)
+    dict[2641824787536] = (semantics.terminal_enter, semantics.terminal_exit)
+    dict[2641824787760] = (semantics.terminal_enter, semantics.terminal_exit)
+    dict[2641824787984] = (semantics.terminal_enter, semantics.terminal_exit)
+    dict[2641824788208] = (semantics.terminal_enter, semantics.terminal_exit)
+    dict[2641824785744] = (semantics.operator_expr_enter, semantics.operator_expr_exit)
+    dict[2641824788376] = (semantics.operator_expr_enter, semantics.operator_expr_exit)
+    dict[2641824801008] = (semantics.operator_term_enter, semantics.operator_term_exit)
+    dict[2641824801288] = (semantics.operator_term_enter, semantics.operator_term_exit)
