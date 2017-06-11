@@ -1,4 +1,5 @@
-from grammar import Term, Variable, Rule, Production
+from .grammar import Term, Variable, Rule, Production
+import importlib
 import string
 import re
 
@@ -64,13 +65,25 @@ class ContextBuilder(object):
             raise ValueError('Invalid option syntax: unknown option name')
 
     def read_file(self, file):
-        self.generated_file = open('generated.py', 'w')
-        self.generated_file.write('import semantics\n')
+        self.generated_file = open('./generated/generated.py', 'w')
+        self.generated_file.write('from . import semantics\n')
         self.generated_file.write('dict = {}\n')
         self.generated_file.write('def create():\n')
         for line in file:
             self.parse_line(line)
         self.generated_file.close()
+
+    def build(self):
+        file = open('generated/grammar.cf')
+        self.read_file(file)
+        file.close()
+        module = importlib.import_module('generated.generated')
+        module.create()
+
+        for rule in self.grammar.rules:
+            d = module.dict[id(rule)]
+            rule.fn_enter = d[0]
+            rule.fn_exit = d[1]
 
 def walk_tree(tree):
     if tree.fn_enter:

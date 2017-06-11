@@ -1,6 +1,21 @@
 from tkinter import ttk
 import tkinter as tk
 
+app_text = '''from parse import *
+
+grammar = grammar.Grammar()
+cb = context.ContextBuilder(grammar)
+cb.build()
+parser = earley.Parser(grammar)
+
+inp = input()
+while inp != 'quit':
+    lst = parser.parse(inp)
+    for t in lst:
+        t.print()
+        context.walk_tree(t)
+    inp = input()'''
+
 class Application(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
@@ -23,22 +38,44 @@ class Application(tk.Frame):
         self.frame_fn.pack(side="right", fill="both", padx=15)
         self.frame.pack(side="top", fill="both")
 
-        self.btn_compile = ttk.Button(self, text="Compile", command=self.compile)
-        self.btn_compile.pack(side="bottom", fill="x")
+        self.frame_btn = tk.Frame(self)
+        self.frame_btn.pack(side="bottom", fill="x")
+
+        ttk.Button(self.frame_btn, text="Create functions", command=self.compile_and_run).pack(fill="x")
+
+        self.btn_template = ttk.Button(self.frame_btn, text="Generate app template", command=self.app_template)
+        self.btn_template.pack(fill="x")
+
+        self.btn_compile = ttk.Button(self.frame_btn, text="Compile", command=self.compile)
+        self.btn_compile.pack(fill="x")
+
+        ttk.Button(self.frame_btn, text="Compile and run", command=self.compile_and_run).pack(fill="x")
 
     def compile(self):
-        grammar_file = open('grammar.cf', 'w')
+        grammar_file = open('generated/grammar.cf', 'w')
         grammar_file.write(self.text_cf.get("1.0","end-1c"))
+        self.generate_file(grammar_file)
         grammar_file.close()
-        fn_file = open('semantics.py', 'w')
+        fn_file = open('generated/semantics.py', 'w')
         fn_file.write(self.text_fn.get("1.0","end-1c"))
         fn_file.close()
+
+    def compile_and_run(self):
+        self.compile()
         root.destroy()
         import app
 
+    def generate_file(self, grammar_file):
+        pass
+
+    def app_template(self):
+        app_file = open('app.py', 'w')
+        app_file.write(app_text)
+        app_file.close()
+
 root = tk.Tk()
 root.title('Compiler')
-root.geometry("700x500+100+100")
+root.geometry("700x520+100+100")
 
 app = Application(master=root)
 app.mainloop()
