@@ -41,15 +41,30 @@ class Application(tk.Frame):
         self.frame_btn = tk.Frame(self)
         self.frame_btn.pack(side="bottom", fill="x")
 
-        ttk.Button(self.frame_btn, text="Create functions", command=self.compile_and_run).pack(fill="x")
-
-        self.btn_template = ttk.Button(self.frame_btn, text="Generate app template", command=self.app_template)
-        self.btn_template.pack(fill="x")
-
-        self.btn_compile = ttk.Button(self.frame_btn, text="Compile", command=self.compile)
-        self.btn_compile.pack(fill="x")
-
+        ttk.Button(self.frame_btn, text="Create functions", command=self.create_functions).pack(fill="x")
+        ttk.Button(self.frame_btn, text="Generate app template", command=self.app_template).pack(fill="x")
+        ttk.Button(self.frame_btn, text="Compile", command=self.compile).pack(fill="x")
         ttk.Button(self.frame_btn, text="Compile and run", command=self.compile_and_run).pack(fill="x")
+
+    def create_functions(self):
+        output = ''
+        text = self.text_fn.get("1.0","end-1c")
+
+        for line in self.text_cf.get("1.0","end-1c").split('\n'):
+            if line[0] == '/' and line[1] == '/':
+                continue
+            lst = line.split('::=')
+            if len(lst) > 2:
+                raise ValueError('Invalid rule syntax: more than one ::=')
+            elif len(lst) == 2:
+                fn = lst[1].strip()
+                fn_enter = 'def ' + fn + '_enter(args):'
+                fn_exit = 'def ' + fn + '_exit(args):'
+                if fn_enter not in text:
+                    output += fn_enter + '\n    pass\n'
+                if fn_exit not in text:
+                    output += fn_exit + '\n    pass\n'
+        self.text_fn.insert(1.0, output)
 
     def compile(self):
         grammar_file = open('generated/grammar.cf', 'w')
@@ -64,9 +79,6 @@ class Application(tk.Frame):
         self.compile()
         root.destroy()
         import app
-
-    def generate_file(self, grammar_file):
-        pass
 
     def app_template(self):
         app_file = open('app.py', 'w')
