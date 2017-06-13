@@ -19,7 +19,7 @@ while inp != 'quit':
 class Application(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
-        self.pack()
+        self.pack(fill="both", expand=True)
         self.create_widgets()
 
     def create_widgets(self):
@@ -29,17 +29,17 @@ class Application(tk.Frame):
 
         tk.Label(self.frame_cf, text="Grammar").pack(side="top")
         self.text_cf = tk.Text(self.frame_cf, width=40)
-        self.text_cf.pack(fill="both")
+        self.text_cf.pack(fill="both", expand=True)
         tk.Label(self.frame_fn, text="Functions").pack(side="top")
         self.text_fn = tk.Text(self.frame_fn, width=40)
-        self.text_fn.pack(fill="both")
+        self.text_fn.pack(fill="both", expand=True)
 
-        self.frame_cf.pack(side="left", fill="both", padx=15)
-        self.frame_fn.pack(side="right", fill="both", padx=15)
-        self.frame.pack(side="top", fill="both")
+        self.frame_cf.pack(side="left", fill="both", padx=15, expand=True)
+        self.frame_fn.pack(side="right", fill="both", padx=15, expand=True)
+        self.frame.pack(side="top", fill="both", expand=True)
 
         self.frame_btn = tk.Frame(self)
-        self.frame_btn.pack(side="bottom", fill="x")
+        self.frame_btn.pack(side="bottom", fill="x", expand=True)
 
         ttk.Button(self.frame_btn, text="Create functions", command=self.create_functions).pack(fill="x")
         ttk.Button(self.frame_btn, text="Generate app template", command=self.app_template).pack(fill="x")
