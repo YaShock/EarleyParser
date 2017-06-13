@@ -31,8 +31,8 @@ class ContextBuilder(object):
             raise ValueError('Invalid rule syntax: more than one ::=')
         elif len(lst) == 2:
             fn = lst[1].strip()
-            fn_enter = fn + '_enter'
-            fn_exit = fn + '_exit'
+            fn_enter = 'semantics.' + fn + '_enter'
+            fn_exit = 'semantics.' + fn + '_exit'
         else:
             fn_enter = None
             fn_exit = None
@@ -52,7 +52,7 @@ class ContextBuilder(object):
                     term_list.append(var)
             r = Rule(variable, Production(*term_list))
             self.grammar.add_rule(r)
-            self.generated_file.write('    dict[%i] = (semantics.%s, semantics.%s)\n' % (id(r), fn_enter, fn_exit))
+            self.generated_file.write('    dict[%i] = (%s, %s)\n' % (id(r), fn_enter, fn_exit))
 
     def parse_option(self, var_name, val):
         val = val.strip()

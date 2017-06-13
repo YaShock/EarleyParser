@@ -69,7 +69,6 @@ class Application(tk.Frame):
     def compile(self):
         grammar_file = open('generated/grammar.cf', 'w')
         grammar_file.write(self.text_cf.get("1.0","end-1c"))
-        self.generate_file(grammar_file)
         grammar_file.close()
         fn_file = open('generated/semantics.py', 'w')
         fn_file.write(self.text_fn.get("1.0","end-1c"))
