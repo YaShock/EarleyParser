@@ -12,7 +12,7 @@ class ContextBuilder(object):
         self.grammar = grammar
 
     def parse_line(self, line):
-        if line[0] == '/' and line[1] == '/':
+        if (line[0] == '/' and line[1] == '/') or line.isspace():
             return
         lst = line.split('->')
         if len(lst) != 2:
@@ -79,7 +79,6 @@ class ContextBuilder(object):
         file.close()
         module = importlib.import_module('generated.generated')
         module.create()
-
         for rule in self.grammar.rules:
             d = module.dict[id(rule)]
             rule.fn_enter = d[0]

@@ -3,7 +3,11 @@ Expr -> Expr OpExpr Term ::= sum
 Expr -> Term ::= sum_unary
 Term -> Term OpProduct Factor ::= product
 Term -> Factor ::= product_unary
-Factor -> "^[0-9]+$" ::= number
+Factor -> '(' Expr ')' | Num ::= parentheses
+Num -> "^[0-9]+$" ::= number
 OpExpr -> '+' | '-' ::= operator_expr
 OpProduct -> '*' | '/' ::= operator_prod
-// factor > ::= (< expression >) | < float > | < var >
+ 
+//< expression > ::= < term > + < expression > | < term > - < expression > //| < term >
+//< term > ::= < factor > * < term > | < factor > / < term > | < factor >
+//< factor > ::= (< expression >) | < float > | < var >

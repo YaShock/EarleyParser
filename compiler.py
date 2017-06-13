@@ -58,8 +58,8 @@ class Application(tk.Frame):
                 raise ValueError('Invalid rule syntax: more than one ::=')
             elif len(lst) == 2:
                 fn = lst[1].strip()
-                fn_enter = 'def ' + fn + '_enter(args):'
-                fn_exit = 'def ' + fn + '_exit(args):'
+                fn_enter = 'def ' + fn + '_enter(children):'
+                fn_exit = 'def ' + fn + '_exit(children):'
                 if fn_enter not in text:
                     output += fn_enter + '\n    pass\n'
                 if fn_exit not in text:
