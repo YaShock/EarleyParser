@@ -26,25 +26,25 @@ class Application(tk.Frame):
         self.frame = tk.Frame(self)
         self.frame_cf = tk.Frame(self.frame)
         self.frame_fn = tk.Frame(self.frame)
-
-        tk.Label(self.frame_cf, text="Grammar").pack(side="top")
-        self.text_cf = tk.Text(self.frame_cf, width=40)
-        self.text_cf.pack(fill="both", expand=True)
-        tk.Label(self.frame_fn, text="Functions").pack(side="top")
-        self.text_fn = tk.Text(self.frame_fn, width=40)
-        self.text_fn.pack(fill="both", expand=True)
-
-        self.frame_cf.pack(side="left", fill="both", padx=15, expand=True)
-        self.frame_fn.pack(side="right", fill="both", padx=15, expand=True)
-        self.frame.pack(side="top", fill="both", expand=True)
-
         self.frame_btn = tk.Frame(self)
-        self.frame_btn.pack(side="bottom", fill="x", expand=True)
+
+        self.frame_btn.pack(fill="x", side="bottom", expand=False, anchor="s")
 
         ttk.Button(self.frame_btn, text="Create functions", command=self.create_functions).pack(fill="x")
         ttk.Button(self.frame_btn, text="Generate app template", command=self.app_template).pack(fill="x")
         ttk.Button(self.frame_btn, text="Compile", command=self.compile).pack(fill="x")
         ttk.Button(self.frame_btn, text="Compile and run", command=self.compile_and_run).pack(fill="x")
+
+        tk.Label(self.frame_cf, text="Grammar").pack(side="top")
+        self.text_cf = tk.Text(self.frame_cf, width=5)
+        self.text_cf.pack(fill="both", expand=True)
+        tk.Label(self.frame_fn, text="Functions").pack(side="top")
+        self.text_fn = tk.Text(self.frame_fn, width=5)
+        self.text_fn.pack(fill="both", expand=True)
+
+        self.frame_cf.pack(side="left", fill="both", padx=15, expand=True)
+        self.frame_fn.pack(side="right", fill="both", padx=15, expand=True)
+        self.frame.pack(side="top", fill="both", expand=True, anchor="center", pady=15)
 
     def create_functions(self):
         output = ''
@@ -64,7 +64,7 @@ class Application(tk.Frame):
                     output += fn_enter + '\n    pass\n'
                 if fn_exit not in text:
                     output += fn_exit + '\n    pass\n'
-        self.text_fn.insert(1.0, output)
+        self.text_fn.insert(tk.END, output)
 
     def compile(self):
         grammar_file = open('generated/grammar.cf', 'w')
@@ -86,7 +86,7 @@ class Application(tk.Frame):
 
 root = tk.Tk()
 root.title('Compiler')
-root.geometry("700x520+100+100")
+root.geometry("500x350+100+100")
 
 app = Application(master=root)
 app.mainloop()
