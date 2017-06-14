@@ -86,8 +86,8 @@ class ContextBuilder(object):
 
 def walk_tree(tree):
     if tree.fn_enter:
-        tree.fn_enter(tree.children)
+        tree.fn_enter(tree)
     for child in tree.children:
         walk_tree(child)
     if tree.fn_exit:
-        tree.fn_exit(tree.children)
+        tree.fn_exit(tree)

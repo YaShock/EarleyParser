@@ -38,6 +38,8 @@ class Tree(object):
         if children is not None:
             self.children.extend(children)
         self.data = data
+    def __getitem__(self, index):
+        return self.children[index]
     def add(self, child):
         self.children.append(child)
     def print(self, level=0):

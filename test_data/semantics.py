@@ -1,88 +1,81 @@
-sum = 0
-product = 0
-term = 0
-operator_expr = None
-operator_term = None
-
-def expr_enter(children):
+def expr_enter(node):
     print('expr enter')
 
-def expr_exit(children):
+def expr_exit(node):
     print('expr exit')
-    global sum
-    print('result = %s' % sum)
+    node.value = node[0].value
+    print('result = %s' % node.value)
 
-def sum_enter(children):
+def sum_enter(node):
     print('sum enter')
 
-def sum_exit(children):
+def sum_exit(node):
     print('sum exit')
-    global product
-    global sum
-    global operator_expr
-    if operator_expr == '+':
-        sum += product
+    if node[1].value == '+':
+        node.value = node[0].value + node[2].value
     else:
-        sum -= product
-    print(sum)
+        node.value = node[0].value - node[2].value
+    print(node.value)
 
-def sum_unary_enter(children):
+def sum_unary_enter(node):
     print('unary sum enter')
 
-def sum_unary_exit(children):
+def sum_unary_exit(node):
     print('unary sum exit')
-    global sum
-    sum = product
-    print(sum)
+    node.value = node[0].value
+    print(node.value)
 
-def product_enter(children):
+def product_enter(node):
     print('binary product enter')
 
-def product_exit(children):
+def product_exit(node):
     print('binary product exit')
-    global product
-    global term
-    global operator_term
-    if operator_term == '*':
-        product *= term
+    if node[1].value == '*':
+        node.value = node[0].value * node[2].value
     else:
-        product /= term
-    print(product)
+        node.value = node[0].value / node[2].value
+    print(node.value)
 
-def product_unary_enter(children):
+def product_unary_enter(node):
     print('unary product enter')
 
-def product_unary_exit(children):
+def product_unary_exit(node):
     print('unary product exit')
-    global product
-    product = term
-    print(product)
+    node.value = node[0].value
+    print(node.value)
 
-def number_enter(children):
+def num_factor_enter(node):
+    pass
+
+def num_factor_exit(node):
+    print('factor exit')
+    node.value = node[0].value
+    print(node.value)
+
+def number_enter(node):
     print('number enter')
 
-def number_exit(children):
+def number_exit(node):
     print('number exit')
-    global term
-    term = int(str(children[0].data))
-    print(term)
+    node.value = int(str(node[0].data))
+    print(node.value)
 
-def operator_expr_enter(children):
+def parentheses_enter(node):
     pass
 
-def operator_expr_exit(children):
-    global operator_expr
-    operator_expr = repr(children[0].data)
+def parentheses_exit(node):
+    print('parentheses exit')
+    node.value = node[1].value
+    print(node.value)
 
-def operator_prod_enter(children):
+def operator_expr_enter(node):
     pass
 
-def operator_prod_exit(children):
-    global operator_term
-    operator_term = repr(children[0].data)
+def operator_expr_exit(node):
+    node.value = repr(node[0].data)
 
-def parentheses_enter(children):
+def operator_prod_enter(node):
     pass
 
-def parentheses_exit(children):
-    pass
+def operator_prod_exit(node):
+    node.value = repr(node[0].data)
