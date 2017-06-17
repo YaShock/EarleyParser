@@ -60,7 +60,10 @@ class Parser(object):
             self.state_list.append(set())
 
     def tokenize(self, text):
-        self.tokens = re.split(self.grammar.delim, text)
+        if self.grammar.delim:
+            self.tokens = re.split(self.grammar.delim, text)
+        else:
+            self.tokens = list(text)
 
     def parse(self, text):
         self.tokenize(text)

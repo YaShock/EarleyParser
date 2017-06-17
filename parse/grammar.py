@@ -82,7 +82,7 @@ class Grammar(object):
         self.rules = set()
         self.terminals = set()
         self.variables = {}
-        self.delim = '\s'
+        self.delim = None
 
     def __iter__(self):
         return iter(self.rules)

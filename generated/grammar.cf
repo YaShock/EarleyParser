@@ -1,3 +1,4 @@
+<delim> -> '\s'
 Formula -> Expr ::= expr
 Expr -> Expr OpExpr Term ::= sum
 Expr -> Term ::= sum_unary
@@ -5,6 +6,8 @@ Term -> Term OpProduct Factor ::= product
 Term -> Factor ::= product_unary
 Factor -> '(' Expr ')' ::= parentheses
 Factor -> Num ::= num_factor
-Num -> "^[0-9]+$" ::= number
+Num -> Num Digit ::= number
+Num -> Digit ::= number_digit
+Digit -> "[0-9]" ::= digit
 OpExpr -> '+' | '-' ::= operator_expr
 OpProduct -> '*' | '/' ::= operator_prod

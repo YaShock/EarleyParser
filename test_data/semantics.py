@@ -53,10 +53,26 @@ def num_factor_exit(node):
     print(node.value)
 
 def number_enter(node):
-    print('number enter')
+    pass
 
 def number_exit(node):
     print('number exit')
+    node.value = node[0].value * 10 + node[1].value
+    print(node.value)
+
+def number_digit_enter(node):
+    print('number enter')
+
+def number_digit_exit(node):
+    print('number digit exit')
+    node.value = node[0].value
+    print(node.value)
+
+def digit_enter(node):
+    pass
+
+def digit_exit(node):
+    print('digit exit')
     node.value = int(str(node[0].data))
     print(node.value)
 
