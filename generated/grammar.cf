@@ -1,4 +1,4 @@
-<delim> -> '\s'
+//<delim> -> '\s'
 Formula -> Expr ::= expr
 Expr -> Expr OpExpr Term ::= sum
 Expr -> Term ::= sum_unary

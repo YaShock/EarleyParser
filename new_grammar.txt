@@ -1,0 +1,94 @@
+new:
+
+Metagrammar:
+
+#grammar: [stmt_list]
+#stmt_list: stmt [';'] [stmt_list]
+#stmt: option | token | rule | comment
+#option: '<' id '>' ':' (terminal | regex)
+#token: id ':' token_product
+#token_product: terminal | regex ['|' token_list]
+rule: rule_name ':' rule_body
+rule_body: [begin_block] expansion_block [end_block]
+begin_block: 'begin:' '{' python_code '}'
+end_block: 'end:' '{' python_code '}'
+expansion_block: 'expansion:' exp_choices
+exp_choices: exp_product ['|' exp_choices]
+exp_product: exp_term [',' exp_product]
+exp_term: [variable_name '='] (token_name | terminal | regex | rule_name)
+rule_name: id '(' param_list ')'
+param_list: [id ',' [param_list]]
+#token_name: id
+#terminal: "'" id "'"
+#regex: '"' id '"'
+#id: letter | '_' {'_' | letter | digit}
+#comment: '#' .*
+
+
+#Example: algebric expression evaluator
+<delim>:"[,;]\""
+
+Digit: "[0-9]"
+OpExpr: '+' | '-'
+OpProduct: '*' | '/'
+
+Formula():
+    expansion:
+        result = Expr()
+    end:
+    {
+        return result
+    }
+
+Expr():
+    begin: {
+        a = 0
+        b = 0
+        op = '+'
+    }
+    expansion:
+        a = Term() |
+        a = Expr(), op = OpExpr, b = Term()
+    end:
+    {
+        if op == '+':
+            return a + b
+        else:
+            return a - b
+    }
+
+Term():
+    begin: {
+        a = 0
+        b = 0
+        op = '*'
+    }
+    expansion:
+        a = Factor() |
+        a = Term(), op = OpProduct, b = Factor()
+    end: {
+        if op == '*':
+            return a * b
+        else:
+            return a / b
+    }
+
+Factor():
+    expansion:
+        a = Num() |
+        '(', a = Expr(), ')'
+    end: {
+        return a
+    }
+
+Num():
+    begin: {
+        digit = '0'
+        num = 0
+    }
+    expansion:
+        digit = Digit |
+        num = Num(), digit = Digit
+    end: {
+        return num*10+int(digit)
+    }
