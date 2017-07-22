@@ -38,6 +38,7 @@ class Tree(object):
         if children is not None:
             self.children.extend(children)
         self.data = data
+        self.fn = None
     def __getitem__(self, index):
         return self.children[index]
     def add(self, child):
@@ -47,6 +48,11 @@ class Tree(object):
         print(text)
         for child in self.children:
             child.print(level+1)
+    def walk_tree(self):
+        if self.fn:
+            self.fn(self)
+        for child in self.children:
+            walk_tree(child)
 
 class Parser(object):
     """docstring for Parser"""
@@ -70,7 +76,7 @@ class Parser(object):
         self.__init_states(text)
         self.state_list[0].add(State(self.grammar.topRule, 0, 0, 0))
         for k in range(len(self.tokens)+1):
-            #print("\nk = %d" % k)
+            print("\nk = %d" % k)
             active = set(self.state_list[k])
             seen = set(self.state_list[k])
             while active:
@@ -84,9 +90,9 @@ class Parser(object):
                         self.complete(state, k)
                 seen |= active
                 active = self.state_list[k]-seen
-            # print()
-            # for state in self.state_list[k]:
-            #     print(state)
+            print()
+            for state in self.state_list[k]:
+                print(state)
         result = []
         for st in self.state_list[-1]:
             if st.rule == self.grammar.topRule:

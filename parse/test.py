@@ -2,6 +2,7 @@ import re
 import collections
 
 grammar_text = '''#Example: algebric expression evaluator
+<delim>:"[,;]"
 
 Digit: "[0-9]"
 OpExpr: '+' | '-'
@@ -9,7 +10,7 @@ OpProduct: '*' | '/'
 
 Formula():
     expansion:
-        result = Expr()
+        result = Expr(b, l)
     end:
     {
         return result
@@ -145,14 +146,5 @@ def tokenize(s):
     if pos != len(s):
         raise RuntimeError('Unexpected character %r on line %d' %(s[pos], line))
 
-statements = '''
-    IF quantity THEN
-        total := total + price * quantity;
-        tax := price * 0.05;
-    ENDIF;
-'''
-
 for token in tokenize(grammar_text):
     print(token)
-    
-    

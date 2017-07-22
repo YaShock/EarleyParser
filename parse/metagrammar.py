@@ -1,8 +1,10 @@
 from grammar import Grammar, Term, Variable, Rule, Production
+from earley import Parser
 import importlib
 import string
 import collections
 import re
+import os
 
 def contains_whitespace(s):
     return any([c in s for c in string.whitespace])
@@ -68,13 +70,30 @@ class Metagrammar(object):
         self._next()
         return val
 
-    def parse_grammar(self, grammar_text):
+    def process_grammar(self, grammar_text, output_filename):
+        # curpath = os.path.abspath(os.curdir)
+        # print("Current path is: %s" % curpath)
+        with open(output_filename, 'w') as o:
+            self.output = o
+            o.write('dict = {}\n')
+            self._parse_grammar(grammar_text)
+        self._set_rule_functions(output_filename)
+        return self.grammar
+
+    def _set_rule_functions(self, output_filename):
+        # import generated.functions
+        module = importlib.import_module(output_filename[0:-3])
+        #module.create()
+        for rule in self.grammar.rules:
+            value = module.dict.get(id(rule))
+            rule.fn = value
+
+    def _parse_grammar(self, grammar_text):
         self.grammar = Grammar()
         self.tokens = self._tokenize(grammar_text)
         self.current_token = self.next_token = None
         self._next()
         self._parse_stmt_list()
-        return self.grammar
 
     def _parse_stmt_list(self):
         while(self.next_token):
@@ -112,14 +131,8 @@ class Metagrammar(object):
             raise SyntaxError("Unknown option on line %d, column %d" % (t.line, t.col))
         self._accept('GT')
         self._accept('COLON')
-        t = self.current_token
-        if t.typ == 'SINGLE_QUOTED':
-            val = re.escape(t.value.strip('\''))
-        elif t.typ == 'DOUBLE_QUOTED':
-            val = t.value.strip('\"')
-        else:
-            raise SyntaxError("Expected symbol \'TERMINAL\' or \"REGEX\", got %s on line %d, column %d" % (t.typ, t.line, t.col))
-        self.grammar.delim = val.strip('\'')
+        val = self._parse_terminal()
+        self.grammar.delim = val
         print('Found option: ' + repr((opt, val)))
 
     def _parse_token(self):
@@ -127,45 +140,74 @@ class Metagrammar(object):
         self._next()
         self._accept('COLON')
         product = self._parse_token_product()
-        self.grammar.add_rule(Rule(Variable(name), Production(*product)))
+        for term in product:
+            self.grammar.add_rule(Rule(Variable(name), Production(term)))
         print('Found token: ' + repr((name, product)))
 
     def _parse_token_product(self):
         t = self.current_token
         prod = []
         prod.append(Term(self._parse_terminal()))
-        print('Parsed a token term: ' + t.value)
+        print('Found a token term: ' + t.value)
         while self.next_token.typ == 'OR':
             self._next()
             t = self._next()
             prod.append(Term(self._parse_terminal()))
-            print('Parsed a token term: ' + t.value)
+            print('Found a token term: ' + t.value)
         return prod
 
     def _parse_rule(self):
         rule_name = self._parse_rule_name()
-        print('Found rule name: ' + repr(rule_name))        
+        print('Found rule name: ' + repr(rule_name))
         self._accept('COLON')
-        choices = self._parse_rule_body()
+        body = self._parse_rule_body()
+        choices = body[0]
         for choice in choices:
-            self.grammar.add_rule(Rule(Variable(rule_name[0]), choice))
+            rule = Rule(Variable(rule_name[0]), choice)
+            self.grammar.add_rule(rule)
+            self._write_rule_function(rule, choice, body[1], body[2])
+
+    def _write_rule_function(self, rule, choice, begin, end):
+        self.output.write('def %s_%s_fn(tree):\n' % (rule.variable.name, id(rule)))
+        if begin:
+            self.output.write(begin + '\n')
+        self._write_rule_choice(rule, choice)
+        if end:
+            self.output.write(end + '\n')
+        self.output.write('dict[%i] = %s_%s_fn\n' % (id(rule), rule.variable.name, id(rule)))
+
+    def _write_rule_choice(self, rule, choice):
+        for idx, term in enumerate(choice):
+            # print(type(choice))
+            # print(type(term))
+            # print(repr(term))
+            var = 'tree.children[%i]' % idx
+            if term.terminal:
+                self.output.write('        %s = None\n' % var)
+            else:
+                self.output.write('        %s.fn()\n' % var)
 
     def _parse_rule_body(self):
         t = self.current_token
+        begin = end = None
         if t.typ == 'begin':
             begin = self._parse_begin_block()
+            self._next()
             print('Found begin block: ' + begin)
         choices = self._parse_expansion_block()
+        t = self.current_token
         if t.typ == 'end':
             end = self._parse_end_block()
             print('Found end block: ' + end)
-        return choices
+        return (choices, begin, end)
 
     def _parse_begin_block(self):
         self._accept('begin')
         self._accept('COLON')
-        python_code = self._accept('PYTHON_CODE')
-        return python_code[1:-1]
+        self._expect('PYTHON_CODE')
+        return self.current_token.value[1:-1]
+        # python_code = self._accept('PYTHON_CODE')
+        # return python_code[1:-1]
 
     def _parse_expansion_block(self):
         self._accept('expansion')
@@ -177,8 +219,10 @@ class Metagrammar(object):
     def _parse_end_block(self):
         self._accept('end')
         self._accept('COLON')
-        python_code = self._accept('PYTHON_CODE')
-        return python_code[1:-1]
+        self._expect('PYTHON_CODE')
+        return self.current_token.value[1:-1]
+        # python_code = self._accept('PYTHON_CODE')
+        # return python_code[1:-1]
 
     def _parse_exp_choices(self):
         choices = [Production(*self._parse_exp_product())]
@@ -201,9 +245,8 @@ class Metagrammar(object):
         return prod
 
     def _parse_exp_term(self):
-        var = None
         if self.next_token.typ == 'EQUALS':
-            var = self._accept('ID')
+            assignment = self._accept('ID')
             self._next()
         t = self.current_token
         if t.typ == 'SINGLE_QUOTED':
@@ -213,10 +256,14 @@ class Metagrammar(object):
         elif t.typ == 'ID':
             if self.next_token.typ == 'LPAREN':
                 rule = self._parse_rule_name()
-                return Variable(rule[0])
+                var = Variable(rule[0])
+                var.terminal = False
+                return var
             else:
                 token = self._accept('ID')
-                return Variable(token)
+                var = Variable(token)
+                var.terminal = True
+                return var
         else:
             raise SyntaxError("Expected symbol \'TERMINAL\', \"REGEX\", TOKEN NAME or RULE NAME, got %s on line %d, column %d" % (t.typ, t.line, t.col))
 
@@ -331,88 +378,58 @@ class Metagrammar(object):
 #             rule.fn_enter = d[0]
 #             rule.fn_exit = d[1]
 
-def walk_tree(tree):
-    if tree.fn_enter:
-        tree.fn_enter(tree)
-    for child in tree.children:
-        walk_tree(child)
-    if tree.fn_exit:
-        tree.fn_exit(tree)
-
 if __name__ == "__main__":
-    text = '''#Example: algebric expression evaluator
-<delim>:"[,;]"
-
-Digit: "[0-9]"
-OpExpr: '+' | '-'
-OpProduct: '*' | '/'
+    text = '''<delim>:"\s"
 
 Formula():
     expansion:
-        result = Expr(b, l)
-    end:
-    {
-        return result
+        Expr()
+    end: {
+
     }
+
+Num: "[0-9]+"
+Operator: '+' | '-'
 
 Expr():
-    begin: {
+    begin:
+    {
         a = 0
         b = 0
-        op = '+'
     }
     expansion:
-        a = Term() |
-        a = Expr(), op = OpExpr, b = Term()
+        a = Number() |
+        a = Expr(), op = Operator, b = Number()        
     end:
     {
-        if op == '+':
-            return a + b
+        if op is None or op.value == '+':
+            return a+b
         else:
-            return a - b
+            return a-b
     }
 
-Term():
-    begin: {
-        a = 0
-        b = 0
-        op = '*'
-    }
+Number():
     expansion:
-        a = Factor() |
-        a = Term(), op = OpProduct, b = Factor()
+        num = Num
     end: {
-        if op == '*':
-            return a * b
-        else:
-            return a / b
-    }
-
-Factor():
-    expansion:
-        a = Num() |
-        '(', a = Expr(), ')'
-    end: {
-        return a
-    }
-
-Num():
-    begin: {
-        digit = '0'
-        num = 0
-    }
-    expansion:
-        digit = Digit |
-        num = Num(), digit = Digit
-    end: {
-        return num*10+int(digit)
+        return int(num.value)
     }'''
 
     mg = Metagrammar()
-    g = mg.parse_grammar(text)
+    g = mg.process_grammar(text, 'functions.py')
     print('------------CREATED GRAMMAR------------')
     print('Delim option: ' + g.delim)
     print('Terminals: ' + repr(g.terminals))
     print('Rules:')
     for rule in g.rules:
         print(rule)
+        # if rule.fn:
+        #     print('Functions: ' + repr(rule.fn))
+
+    print('Top rule: ' + repr(g.topRule))
+    print('Parsing input:')
+    parser = Parser(g)    
+    res = parser.parse(input())
+    #print(repr(parser.tokens))
+    for r in res:
+        r.print()

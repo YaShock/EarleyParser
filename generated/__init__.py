@@ -1,1 +1,1 @@
-__all__ = ["generated", "semantics"]
+__all__ = ["generated", "semantics", "functions"]
