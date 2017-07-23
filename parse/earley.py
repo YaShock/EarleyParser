@@ -48,11 +48,12 @@ class Tree(object):
         print(text)
         for child in self.children:
             child.print(level+1)
-    def walk_tree(self):
+    def walk(self):
         if self.fn:
+            print('test')
             self.fn(self)
         for child in self.children:
-            walk_tree(child)
+            child.walk()
 
 class Parser(object):
     """docstring for Parser"""
@@ -76,7 +77,7 @@ class Parser(object):
         self.__init_states(text)
         self.state_list[0].add(State(self.grammar.topRule, 0, 0, 0))
         for k in range(len(self.tokens)+1):
-            print("\nk = %d" % k)
+            # print("\nk = %d" % k)
             active = set(self.state_list[k])
             seen = set(self.state_list[k])
             while active:
@@ -90,9 +91,9 @@ class Parser(object):
                         self.complete(state, k)
                 seen |= active
                 active = self.state_list[k]-seen
-            print()
-            for state in self.state_list[k]:
-                print(state)
+            # print()
+            # for state in self.state_list[k]:
+            #     print(state)
         result = []
         for st in self.state_list[-1]:
             if st.rule == self.grammar.topRule:
@@ -120,13 +121,11 @@ class Parser(object):
     def construct_tree(self, state, level=0):
         tree = Tree()
         tree.data = state.rule.variable
-        tree.fn_enter = state.rule.fn_enter
-        tree.fn_exit = state.rule.fn_exit
+        tree.fn = state.rule.fn
         j = 0
         for i in range(len(state.rule.production)):
             node = Tree()
-            node.fn_enter = None
-            node.fn_exit = None
+            node.fn = None
             if state.back_pointers:
                 if not self.grammar.is_terminal(state.rule.production[i]):
                     node = self.construct_tree(state.back_pointers[j], level+1)

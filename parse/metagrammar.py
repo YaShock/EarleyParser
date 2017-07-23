@@ -177,15 +177,14 @@ class Metagrammar(object):
         self.output.write('dict[%i] = %s_%s_fn\n' % (id(rule), rule.variable.name, id(rule)))
 
     def _write_rule_choice(self, rule, choice):
+        print(repr(rule))
         for idx, term in enumerate(choice):
-            # print(type(choice))
-            # print(type(term))
-            # print(repr(term))
-            var = 'tree.children[%i]' % idx
-            if term.terminal:
-                self.output.write('        %s = None\n' % var)
-            else:
-                self.output.write('        %s.fn()\n' % var)
+            self.output.write('        print(\'%s \' + repr(tree.children[%i].data))\n' % (idx, idx))
+            # var = 'tree.children[%i]' % idx
+            # if term.terminal:
+            #     self.output.write('        %s = None\n' % var)
+            # else:
+            #     self.output.write('        %s.fn()\n' % var)
 
     def _parse_rule_body(self):
         t = self.current_token
@@ -396,6 +395,7 @@ Expr():
     {
         a = 0
         b = 0
+        op = None
     }
     expansion:
         a = Number() |
@@ -412,7 +412,7 @@ Number():
     expansion:
         num = Num
     end: {
-        return int(num.value)
+        return 0
     }'''
 
     mg = Metagrammar()
@@ -433,3 +433,5 @@ Number():
     #print(repr(parser.tokens))
     for r in res:
         r.print()
+        print('Walking')
+        r.walk()
