@@ -81,9 +81,8 @@ class Metagrammar(object):
         return self.grammar
 
     def _set_rule_functions(self, output_filename):
-        # import generated.functions
+        # trim '.py' from the file name
         module = importlib.import_module(output_filename[0:-3])
-        #module.create()
         for rule in self.grammar.rules:
             value = module.dict.get(id(rule))
             rule.fn = value
@@ -141,8 +140,15 @@ class Metagrammar(object):
         self._accept('COLON')
         product = self._parse_token_product()
         for term in product:
-            self.grammar.add_rule(Rule(Variable(name), Production(term)))
+            rule = Rule(Variable(name), Production(term))
+            self.grammar.add_rule(rule)
+            self._write_token_function(rule)
         print('Found token: ' + repr((name, product)))
+
+    def _write_token_function(self, rule):
+        self.output.write('def %s_%s_fn(tree):\n' % (rule.variable.name, id(rule)))
+        self.output.write('        return tree.children[0].data.value\n\n')
+        self.output.write('dict[%i] = %s_%s_fn\n\n' % (id(rule), rule.variable.name, id(rule)))
 
     def _parse_token_product(self):
         t = self.current_token
@@ -163,7 +169,7 @@ class Metagrammar(object):
         body = self._parse_rule_body()
         choices = body[0]
         for choice in choices:
-            prod = Production(*[term[0] for term in choice])
+            prod = Production(*[term[1] for term in choice])
             rule = Rule(Variable(rule_name[0]), prod)
             self.grammar.add_rule(rule)
             self._write_rule_function(rule, choice, body[1], body[2])
@@ -175,7 +181,7 @@ class Metagrammar(object):
         self._write_rule_choice(rule, choice)
         if end:
             self.output.write(end + '\n')
-        self.output.write('dict[%i] = %s_%s_fn\n' % (id(rule), rule.variable.name, id(rule)))
+        self.output.write('dict[%i] = %s_%s_fn\n\n' % (id(rule), rule.variable.name, id(rule)))
 
     def _write_rule_choice(self, rule, choice):
         print(repr(rule))
@@ -186,11 +192,7 @@ class Metagrammar(object):
                 assign = '%s = ' % term[0]
             else:
                 assign = ''
-            if term[1].terminal:
-                if assign:
-                    self.output.write('        %s%s\n' % (assign, var))
-            else:
-                self.output.write('        %s%s.fn(%s)\n' % (assign, var, var))
+            self.output.write('        %s%s.fn(%s)\n' % (assign, var, var))
 
     def _parse_rule_body(self):
         t = self.current_token
@@ -389,12 +391,12 @@ class Metagrammar(object):
 if __name__ == "__main__":
     text = '''<delim>:"\s"
 
-#Formula():
-#    expansion:
-#        Expr()
-#    end: {
-#
-#    }
+Formula():
+    expansion:
+        e = Expr()
+    end: {
+        print(e)
+    }
 
 Num: "[0-9]+"
 Operator: '+' | '-'
@@ -411,7 +413,7 @@ Expr():
         a = Expr(), op = Operator, b = Number()        
     end:
     {
-        if op is None or op.value == '+':
+        if op is None or op == '+':
             return a+b
         else:
             return a-b
@@ -421,7 +423,7 @@ Number():
     expansion:
         num = Num
     end: {
-        return int(num.value)
+        return int(num)
     }'''
 
     mg = Metagrammar()
@@ -440,7 +442,7 @@ Number():
     parser = Parser(g)    
     res = parser.parse(input())
     #print(repr(parser.tokens))
-    # for r in res:
-    #     r.print()
-    #     print('Walking')
-    #     r.walk()
+    for r in res:
+        r.print()
+        print('Walking')
+        r.walk()

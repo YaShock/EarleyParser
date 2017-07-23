@@ -50,7 +50,6 @@ class Tree(object):
             child.print(level+1)
     def walk(self):
         if self.fn:
-            print('test')
             self.fn(self)
         for child in self.children:
             child.walk()
