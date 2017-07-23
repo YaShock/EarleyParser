@@ -1,6 +1,3 @@
-import re
-import collections
-
 grammar_text = '''#Example: algebric expression evaluator
 <delim>:"[,;]"
 

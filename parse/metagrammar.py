@@ -163,7 +163,8 @@ class Metagrammar(object):
         body = self._parse_rule_body()
         choices = body[0]
         for choice in choices:
-            rule = Rule(Variable(rule_name[0]), choice)
+            prod = Production(*[term[0] for term in choice])
+            rule = Rule(Variable(rule_name[0]), prod)
             self.grammar.add_rule(rule)
             self._write_rule_function(rule, choice, body[1], body[2])
 
@@ -179,12 +180,17 @@ class Metagrammar(object):
     def _write_rule_choice(self, rule, choice):
         print(repr(rule))
         for idx, term in enumerate(choice):
-            self.output.write('        print(\'%s \' + repr(tree.children[%i].data))\n' % (idx, idx))
-            # var = 'tree.children[%i]' % idx
-            # if term.terminal:
-            #     self.output.write('        %s = None\n' % var)
-            # else:
-            #     self.output.write('        %s.fn()\n' % var)
+            # self.output.write('        print(\'%s \' + repr(tree.children[%i].data))\n' % (idx, idx))
+            var = 'tree.children[%i]' % idx
+            if term[0] is not None:
+                assign = '%s = ' % term[0]
+            else:
+                assign = ''
+            if term[1].terminal:
+                if assign:
+                    self.output.write('        %s%s\n' % (assign, var))
+            else:
+                self.output.write('        %s%s.fn(%s)\n' % (assign, var, var))
 
     def _parse_rule_body(self):
         t = self.current_token
@@ -224,13 +230,13 @@ class Metagrammar(object):
         # return python_code[1:-1]
 
     def _parse_exp_choices(self):
-        choices = [Production(*self._parse_exp_product())]
-        print('Found production product: ' + repr(choices[0]))
+        choices = [self._parse_exp_product()]
+        print('Found expansion product: ' + repr(choices[0]))
         while self.current_token.typ == 'OR':
             self._next()
             prod = self._parse_exp_product()
-            print('Found production product: ' + repr(prod))
-            choices.append(Production(*prod))
+            print('Found expansion product: ' + repr(prod))
+            choices.append(prod)
         return choices
 
     def _parse_exp_product(self):
@@ -244,27 +250,30 @@ class Metagrammar(object):
         return prod
 
     def _parse_exp_term(self):
+        assignment = None
+        term = None
         if self.next_token.typ == 'EQUALS':
             assignment = self._accept('ID')
             self._next()
         t = self.current_token
         if t.typ == 'SINGLE_QUOTED':
-            return Term(self._accept('SINGLE_QUOTED'))
+            term = Term(self._accept('SINGLE_QUOTED'))
         elif t.typ == 'DOUBLE_QUOTED':
-            return Term(self._accept('DOUBLE_QUOTED'))
+            term = Term(self._accept('DOUBLE_QUOTED'))
         elif t.typ == 'ID':
             if self.next_token.typ == 'LPAREN':
                 rule = self._parse_rule_name()
                 var = Variable(rule[0])
                 var.terminal = False
-                return var
+                term = var
             else:
                 token = self._accept('ID')
                 var = Variable(token)
                 var.terminal = True
-                return var
+                term = var
         else:
             raise SyntaxError("Expected symbol \'TERMINAL\', \"REGEX\", TOKEN NAME or RULE NAME, got %s on line %d, column %d" % (t.typ, t.line, t.col))
+        return (assignment, term)
 
     def _parse_rule_name(self):
         name = self.current_token.value
@@ -380,12 +389,12 @@ class Metagrammar(object):
 if __name__ == "__main__":
     text = '''<delim>:"\s"
 
-Formula():
-    expansion:
-        Expr()
-    end: {
-
-    }
+#Formula():
+#    expansion:
+#        Expr()
+#    end: {
+#
+#    }
 
 Num: "[0-9]+"
 Operator: '+' | '-'
@@ -412,7 +421,7 @@ Number():
     expansion:
         num = Num
     end: {
-        return 0
+        return int(num.value)
     }'''
 
     mg = Metagrammar()
@@ -431,7 +440,7 @@ Number():
     parser = Parser(g)    
     res = parser.parse(input())
     #print(repr(parser.tokens))
-    for r in res:
-        r.print()
-        print('Walking')
-        r.walk()
+    # for r in res:
+    #     r.print()
+    #     print('Walking')
+    #     r.walk()

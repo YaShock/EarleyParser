@@ -1,43 +1,37 @@
 dict = {}
-def Formula_140563373374376_fn(tree):
-        print('0 ' + repr(tree.children[0].data))
-
-
-    
-dict[140563373374376] = Formula_140563373374376_fn
-def Expr_140563373409616_fn(tree):
+def Expr_140282372764560_fn(tree):
 
         a = 0
         b = 0
         op = None
     
-        print('0 ' + repr(tree.children[0].data))
+        a = tree.children[0].fn(tree.children[0])
 
         if op is None or op.value == '+':
             return a+b
         else:
             return a-b
     
-dict[140563373409616] = Expr_140563373409616_fn
-def Expr_140563373409784_fn(tree):
+dict[140282372764560] = Expr_140282372764560_fn
+def Expr_140282372764952_fn(tree):
 
         a = 0
         b = 0
         op = None
     
-        print('0 ' + repr(tree.children[0].data))
-        print('1 ' + repr(tree.children[1].data))
-        print('2 ' + repr(tree.children[2].data))
+        a = tree.children[0].fn(tree.children[0])
+        op = tree.children[1]
+        b = tree.children[2].fn(tree.children[2])
 
         if op is None or op.value == '+':
             return a+b
         else:
             return a-b
     
-dict[140563373409784] = Expr_140563373409784_fn
-def Number_140563373410064_fn(tree):
-        print('0 ' + repr(tree.children[0].data))
+dict[140282372764952] = Expr_140282372764952_fn
+def Number_140282372763720_fn(tree):
+        num = tree.children[0]
 
-        return 0
+        return int(num.value)
     
-dict[140563373410064] = Number_140563373410064_fn
+dict[140282372763720] = Number_140282372763720_fn
