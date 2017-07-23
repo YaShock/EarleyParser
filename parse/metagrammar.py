@@ -187,12 +187,13 @@ class Metagrammar(object):
         print(repr(rule))
         for idx, term in enumerate(choice):
             # self.output.write('        print(\'%s \' + repr(tree.children[%i].data))\n' % (idx, idx))
-            var = 'tree.children[%i]' % idx
-            if term[0] is not None:
-                assign = '%s = ' % term[0]
-            else:
-                assign = ''
-            self.output.write('        %s%s.fn(%s)\n' % (assign, var, var))
+            if isinstance(term[1], Variable):
+                var = 'tree.children[%i]' % idx
+                if term[0] is not None:
+                    assign = '%s = ' % term[0]
+                else:
+                    assign = ''
+                self.output.write('        %s%s.fn(%s)\n' % (assign, var, var))
 
     def _parse_rule_body(self):
         t = self.current_token
@@ -258,20 +259,17 @@ class Metagrammar(object):
             assignment = self._accept('ID')
             self._next()
         t = self.current_token
-        if t.typ == 'SINGLE_QUOTED':
-            term = Term(self._accept('SINGLE_QUOTED'))
-        elif t.typ == 'DOUBLE_QUOTED':
-            term = Term(self._accept('DOUBLE_QUOTED'))
+        if t.typ == 'SINGLE_QUOTED' or t.typ == 'DOUBLE_QUOTED':
+            term = Term(self._parse_terminal())
+            self._next()
         elif t.typ == 'ID':
             if self.next_token.typ == 'LPAREN':
                 rule = self._parse_rule_name()
                 var = Variable(rule[0])
-                var.terminal = False
                 term = var
             else:
                 token = self._accept('ID')
                 var = Variable(token)
-                var.terminal = True
                 term = var
         else:
             raise SyntaxError("Expected symbol \'TERMINAL\', \"REGEX\", TOKEN NAME or RULE NAME, got %s on line %d, column %d" % (t.typ, t.line, t.col))
