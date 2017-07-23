@@ -1,17 +1,17 @@
 grammar_text = '''#Example: algebric expression evaluator
-<delim>:"[,;]"
-
-Digit: "[0-9]"
-OpExpr: '+' | '-'
-OpProduct: '*' | '/'
+<delim>:"\s"
 
 Formula():
     expansion:
-        result = Expr(b, l)
+        result = Expr()
     end:
     {
-        return result
+        print(result)
     }
+
+Num: "[0-9]+"
+OpExpr: '+' | '-'
+OpProduct: '*' | '/'
 
 Expr():
     begin: {
@@ -33,7 +33,7 @@ Expr():
 Term():
     begin: {
         a = 0
-        b = 0
+        b = 1
         op = '*'
     }
     expansion:
@@ -48,22 +48,17 @@ Term():
 
 Factor():
     expansion:
-        a = Num() |
+        a = Number() |
         '(', a = Expr(), ')'
     end: {
         return a
     }
 
-Num():
-    begin: {
-        digit = '0'
-        num = 0
-    }
+Number():
     expansion:
-        digit = Digit |
-        num = Num(), digit = Digit
+        num = Num
     end: {
-        return num*10+int(digit)
+        return int(num)
     }'''
 
 # COMMENT       = r'(?P<COMMENT>#.*)'

@@ -387,34 +387,60 @@ class Metagrammar(object):
 #             rule.fn_exit = d[1]
 
 if __name__ == "__main__":
-    text = '''<delim>:"\s"
+    text = '''#Example: algebric expression evaluator
+<delim>:"\s"
 
 Formula():
     expansion:
-        e = Expr()
-    end: {
-        print(e)
+        result = Expr()
+    end:
+    {
+        print(result)
     }
 
 Num: "[0-9]+"
-Operator: '+' | '-'
+OpExpr: '+' | '-'
+OpProduct: '*' | '/'
 
 Expr():
-    begin:
-    {
+    begin: {
         a = 0
         b = 0
-        op = None
+        op = '+'
     }
     expansion:
-        a = Number() |
-        a = Expr(), op = Operator, b = Number()        
+        a = Term() |
+        a = Expr(), op = OpExpr, b = Term()
     end:
     {
-        if op is None or op == '+':
-            return a+b
+        if op == '+':
+            return a + b
         else:
-            return a-b
+            return a - b
+    }
+
+Term():
+    begin: {
+        a = 0
+        b = 1
+        op = '*'
+    }
+    expansion:
+        a = Factor() |
+        a = Term(), op = OpProduct, b = Factor()
+    end: {
+        if op == '*':
+            return a * b
+        else:
+            return a / b
+    }
+
+Factor():
+    expansion:
+        a = Number() |
+        '(', a = Expr(), ')'
+    end: {
+        return a
     }
 
 Number():
