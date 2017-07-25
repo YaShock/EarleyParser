@@ -2,14 +2,16 @@ from grammar import Grammar, Term, Variable, Rule, Production
 from earley import Parser
 import importlib
 import string
-import collections
+from collections import namedtuple
 import re
 import os
 
 def contains_whitespace(s):
     return any([c in s for c in string.whitespace])
 
-Token = collections.namedtuple('Token', ['typ', 'value', 'line', 'col'])
+Token = namedtuple('Token', ['typ', 'value', 'line', 'col'])
+
+
 
 class Metagrammar(object):
     """docstring for Metagrammar"""
@@ -146,8 +148,8 @@ class Metagrammar(object):
         print('Found token: ' + repr((name, product)))
 
     def _write_token_function(self, rule):
-        self.output.write('def %s_%s_fn(tree):\n' % (rule.variable.name, id(rule)))
-        self.output.write('        return tree.children[0].data.value\n\n')
+        self.output.write('def %s_%s_fn(node):\n' % (rule.variable.name, id(rule)))
+        self.output.write('        return node.children[0].data.value\n\n')
         self.output.write('dict[%i] = %s_%s_fn\n\n' % (id(rule), rule.variable.name, id(rule)))
 
     def _parse_token_product(self):
@@ -163,19 +165,23 @@ class Metagrammar(object):
         return prod
 
     def _parse_rule(self):
-        rule_name = self._parse_rule_name()
+        (rule_name, rule_params) = self._parse_rule_name()
         print('Found rule name: ' + repr(rule_name))
         self._accept('COLON')
         body = self._parse_rule_body()
         choices = body[0]
         for choice in choices:
             prod = Production(*[term[1] for term in choice])
-            rule = Rule(Variable(rule_name[0]), prod)
+            rule = Rule(Variable(rule_name), prod)
             self.grammar.add_rule(rule)
-            self._write_rule_function(rule, choice, body[1], body[2])
+            self._write_rule_function(rule, rule_params, choice, body[1], body[2])
 
-    def _write_rule_function(self, rule, choice, begin, end):
-        self.output.write('def %s_%s_fn(tree):\n' % (rule.variable.name, id(rule)))
+    def _write_rule_function(self, rule, rule_params, choice, begin, end):
+        params = ['node']
+        if rule_params:
+            params.extend(rule_params)
+        paramString = ','.join(params)
+        self.output.write('def %s_%s_fn(%s):\n' % (rule.variable.name, id(rule), paramString))
         if begin:
             self.output.write(begin + '\n')
         self._write_rule_choice(rule, choice)
@@ -184,16 +190,21 @@ class Metagrammar(object):
         self.output.write('dict[%i] = %s_%s_fn\n\n' % (id(rule), rule.variable.name, id(rule)))
 
     def _write_rule_choice(self, rule, choice):
-        print(repr(rule))
         for idx, term in enumerate(choice):
-            # self.output.write('        print(\'%s \' + repr(tree.children[%i].data))\n' % (idx, idx))
+            # self.output.write('        print(\'%s \' + repr(node.children[%i].data))\n' % (idx, idx))
             if isinstance(term[1], Variable):
-                var = 'tree.children[%i]' % idx
+                var = 'node.children[%i]' % idx
+                params = [var]
+                if term[2]:
+                    params.extend(term[2])
+                paramString = ','.join(params)
+
                 if term[0] is not None:
                     assign = '%s = ' % term[0]
                 else:
                     assign = ''
-                self.output.write('        %s%s.fn(%s)\n' % (assign, var, var))
+                self.output.write('        %s%s.fn(%s)\n' % (assign, var, paramString))
+                #'|'.join('(?P<%s>%s)' % pair for pair in token_specification)
 
     def _parse_rule_body(self):
         t = self.current_token
@@ -255,6 +266,7 @@ class Metagrammar(object):
     def _parse_exp_term(self):
         assignment = None
         term = None
+        params = None
         if self.next_token.typ == 'EQUALS':
             assignment = self._accept('ID')
             self._next()
@@ -265,15 +277,15 @@ class Metagrammar(object):
         elif t.typ == 'ID':
             if self.next_token.typ == 'LPAREN':
                 rule = self._parse_rule_name()
-                var = Variable(rule[0])
-                term = var
+                term = Variable(rule[0])
+                print('PARAM: %s' % rule[1])
+                params = rule[1]
             else:
                 token = self._accept('ID')
-                var = Variable(token)
-                term = var
+                term = Variable(token)
         else:
             raise SyntaxError("Expected symbol \'TERMINAL\', \"REGEX\", TOKEN NAME or RULE NAME, got %s on line %d, column %d" % (t.typ, t.line, t.col))
-        return (assignment, term)
+        return (assignment, term, params)
 
     def _parse_rule_name(self):
         name = self.current_token.value
@@ -308,93 +320,27 @@ class Metagrammar(object):
             raise SyntaxError("Expected symbol \'PLAIN STRING\' or \"REGEX\", got %s on line %d, column %d" % (t.typ, t.line, t.col))
         return val
 
-# class ContextBuilder(object):
-#     """docstring for ContextBuilder"""
-#     def __init__(self, grammar):
-#         self.grammar = grammar
-
-#     def parse_line(self, line):
-#         if (line[0] == '/' and line[1] == '/') or line.isspace():
-#             return
-#         lst = line.split('->')
-#         if len(lst) != 2:
-#             raise ValueError('Invalid rule syntax: ->')
-#         if contains_whitespace(line[0]):
-#             raise ValueError('Invalid rule syntax: whitespace in the variable')
-#         var_name = lst[0].strip()
-#         if var_name[0] == '<' and var_name[-1] == '>':
-#             self.parse_option(var_name.strip('<>'), lst[1])
-#         else:
-#             self.parse_rule(var_name, lst[1])
-
-#     def parse_rule(self, var_name, val):
-#         lst = val.split('::=')
-#         if len(lst) > 2:
-#             raise ValueError('Invalid rule syntax: more than one ::=')
-#         elif len(lst) == 2:
-#             fn = lst[1].strip()
-#             fn_enter = 'semantics.' + fn + '_enter'
-#             fn_exit = 'semantics.' + fn + '_exit'
-#         else:
-#             fn_enter = None
-#             fn_exit = None
-            
-#         variable = self.grammar.variables.setdefault(var_name, Variable(var_name))
-#         rules = lst[0].split('|')
-#         for rule in rules:
-#             terms = rule.split()
-#             term_list = []
-#             for term in terms:
-#                 if term[0] == '\"' and term[-1] == '\"':
-#                     term_list.append(Term(term.strip('\"')))
-#                 elif term[0] == '\'' and term[-1] == '\'':
-#                     term_list.append(Term(re.escape(term.strip('\''))))
-#                 else:
-#                     var = self.grammar.variables.setdefault(term, Variable(term))
-#                     term_list.append(var)
-#             r = Rule(variable, Production(*term_list))
-#             self.grammar.add_rule(r)
-#             self.generated_file.write('    dict[%i] = (%s, %s)\n' % (id(r), fn_enter, fn_exit))
-
-#     def parse_option(self, var_name, val):
-#         val = val.strip()
-#         if val[0] != '\'' or val[-1] != '\'':
-#             raise ValueError('Invalid option syntax: the value must be enclosed in \'')
-#         val = val.strip('\'')
-#         if var_name == 'delim':
-#             self.grammar.delim = val
-#         else:
-#             raise ValueError('Invalid option syntax: unknown option name')
-
-#     def read_file(self, file):
-#         self.generated_file = open('./generated/generated.py', 'w')
-#         self.generated_file.write('from . import semantics\n')
-#         self.generated_file.write('dict = {}\n')
-#         self.generated_file.write('def create():\n')
-#         for line in file:
-#             self.parse_line(line)
-#         self.generated_file.close()
-
-#     def build(self):
-#         file = open('generated/grammar.cf')
-#         self.read_file(file)
-#         file.close()
-#         module = importlib.import_module('generated.generated')
-#         module.create()
-#         for rule in self.grammar.rules:
-#             d = module.dict[id(rule)]
-#             rule.fn_enter = d[0]
-#             rule.fn_exit = d[1]
-
 if __name__ == "__main__":
     text = '''#Example: algebric expression evaluator
 <delim>:"\s"
 
-Formula():
+TopKekz():
+    begin: {
+        x = 'yey'
+    }
+    expansion:
+        Formula(x)
+    end:
+    {
+        print('End')
+    }
+
+Formula(x):
     expansion:
         result = Expr()
     end:
     {
+        print("Kekz: " + x)
         print(result)
     }
 
