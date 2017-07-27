@@ -324,23 +324,11 @@ if __name__ == "__main__":
     text = '''#Example: algebric expression evaluator
 <delim>:"\s"
 
-TopKekz():
-    begin: {
-        x = 'yey'
-    }
-    expansion:
-        Formula(x)
-    end:
-    {
-        print('End')
-    }
-
-Formula(x):
+Formula():
     expansion:
         result = Expr()
     end:
     {
-        print("Kekz: " + x)
         print(result)
     }
 
@@ -414,5 +402,5 @@ Number():
     #print(repr(parser.tokens))
     for r in res:
         r.print()
-        print('Walking')
+        # print('Walking')
         r.walk()

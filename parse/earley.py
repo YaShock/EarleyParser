@@ -49,10 +49,11 @@ class Tree(object):
         for child in self.children:
             child.print(level+1)
     def walk(self):
-        if self.fn:
-            self.fn(self)
-        for child in self.children:
-            child.walk()
+        self.fn(self)
+        # if self.fn:
+        #     self.fn(self)
+        # for child in self.children:
+        #     child.walk()
 
 class Parser(object):
     """docstring for Parser"""
