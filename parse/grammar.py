@@ -77,8 +77,8 @@ class Production(object):
 
 class Grammar(object):
     """docstring for Grammar"""
-    def __init__(self, topRule=None):
-        self.topRule = topRule
+    def __init__(self, top_rule=None):
+        self.top_rule = top_rule
         self.rules = set()
         self.terminals = set()
         self.variables = {}
@@ -91,8 +91,8 @@ class Grammar(object):
         rule.fn_enter = fn_enter
         rule.fn_exit = fn_exit
         self.rules.add(rule)
-        if self.topRule is None:
-            self.topRule = rule
+        if self.top_rule is None:
+            self.top_rule = rule
         for term in rule.production.terms:
             if not isinstance(term, Variable):
                 self.terminals.add(term)

@@ -1,37 +1,37 @@
 dict = {}
-def Formula_140015861788008_fn(node):
+def Num_139972500368744_fn(node):
+        return node.children[0].data.value
+
+dict[139972500368744] = Num_139972500368744_fn
+
+def OpExpr_139972500342208_fn(node):
+        return node.children[0].data.value
+
+dict[139972500342208] = OpExpr_139972500342208_fn
+
+def OpExpr_139972500418856_fn(node):
+        return node.children[0].data.value
+
+dict[139972500418856] = OpExpr_139972500418856_fn
+
+def OpProduct_139972500419472_fn(node):
+        return node.children[0].data.value
+
+dict[139972500419472] = OpProduct_139972500419472_fn
+
+def OpProduct_139972500419864_fn(node):
+        return node.children[0].data.value
+
+dict[139972500419864] = OpProduct_139972500419864_fn
+
+def Formula_139972500420480_fn(node):
         result = node.children[0].fn(node.children[0])
 
         print(result)
     
-dict[140015861788008] = Formula_140015861788008_fn
+dict[139972500420480] = Formula_139972500420480_fn
 
-def Num_140015861788456_fn(node):
-        return node.children[0].data.value
-
-dict[140015861788456] = Num_140015861788456_fn
-
-def OpExpr_140015861825888_fn(node):
-        return node.children[0].data.value
-
-dict[140015861825888] = OpExpr_140015861825888_fn
-
-def OpExpr_140015861826224_fn(node):
-        return node.children[0].data.value
-
-dict[140015861826224] = OpExpr_140015861826224_fn
-
-def OpProduct_140015861827064_fn(node):
-        return node.children[0].data.value
-
-dict[140015861827064] = OpProduct_140015861827064_fn
-
-def OpProduct_140015861827288_fn(node):
-        return node.children[0].data.value
-
-dict[140015861827288] = OpProduct_140015861827288_fn
-
-def Expr_140015861828016_fn(node):
+def Expr_139972500421208_fn(node):
 
         a = 0
         b = 0
@@ -44,9 +44,9 @@ def Expr_140015861828016_fn(node):
         else:
             return a - b
     
-dict[140015861828016] = Expr_140015861828016_fn
+dict[139972500421208] = Expr_139972500421208_fn
 
-def Expr_140015861828240_fn(node):
+def Expr_139972500421432_fn(node):
 
         a = 0
         b = 0
@@ -61,9 +61,9 @@ def Expr_140015861828240_fn(node):
         else:
             return a - b
     
-dict[140015861828240] = Expr_140015861828240_fn
+dict[139972500421432] = Expr_139972500421432_fn
 
-def Term_140015861828856_fn(node):
+def Term_139972500422048_fn(node):
 
         a = 0
         b = 1
@@ -76,9 +76,9 @@ def Term_140015861828856_fn(node):
         else:
             return a / b
     
-dict[140015861828856] = Term_140015861828856_fn
+dict[139972500422048] = Term_139972500422048_fn
 
-def Term_140015861829080_fn(node):
+def Term_139972500422272_fn(node):
 
         a = 0
         b = 1
@@ -93,26 +93,26 @@ def Term_140015861829080_fn(node):
         else:
             return a / b
     
-dict[140015861829080] = Term_140015861829080_fn
+dict[139972500422272] = Term_139972500422272_fn
 
-def Factor_140015861837952_fn(node):
+def Factor_139972500426992_fn(node):
         a = node.children[0].fn(node.children[0])
 
         return a
     
-dict[140015861837952] = Factor_140015861837952_fn
+dict[139972500426992] = Factor_139972500426992_fn
 
-def Factor_140015861838232_fn(node):
+def Factor_139972500427272_fn(node):
         a = node.children[1].fn(node.children[1])
 
         return a
     
-dict[140015861838232] = Factor_140015861838232_fn
+dict[139972500427272] = Factor_139972500427272_fn
 
-def Number_140015861838624_fn(node):
+def Number_139972500427720_fn(node):
         num = node.children[0].fn(node.children[0])
 
         return int(num)
     
-dict[140015861838624] = Number_140015861838624_fn
+dict[139972500427720] = Number_139972500427720_fn
 

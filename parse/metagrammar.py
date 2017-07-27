@@ -26,6 +26,7 @@ class Metagrammar(object):
             ('LPAREN', r'\('),
             ('RPAREN',    r'\)'),
             ('COLON',    r':'),
+            ('EXCL',    r'!'),
             ('EQUALS',    r'='),
             ('LT',    r'<'),
             ('GT',    r'>'),
@@ -113,6 +114,8 @@ class Metagrammar(object):
             #pass
         elif t.typ == 'LT':
             self._parse_option()
+        elif t.typ == 'EXCL':
+            self._parse_rule()
         elif t.typ == 'ID':
             nt = self.next_token
             if nt.typ == 'COLON':
@@ -165,6 +168,10 @@ class Metagrammar(object):
         return prod
 
     def _parse_rule(self):
+        is_top_rule = False
+        if self.current_token.typ == 'EXCL':
+            self._accept('EXCL')
+            is_top_rule = True
         (rule_name, rule_params) = self._parse_rule_name()
         print('Found rule name: ' + repr(rule_name))
         self._accept('COLON')
@@ -174,6 +181,8 @@ class Metagrammar(object):
             prod = Production(*[term[1] for term in choice])
             rule = Rule(Variable(rule_name), prod)
             self.grammar.add_rule(rule)
+            if is_top_rule:
+                self.grammar.top_rule = rule
             self._write_rule_function(rule, rule_params, choice, body[1], body[2])
 
     def _write_rule_function(self, rule, rule_params, choice, begin, end):
@@ -319,22 +328,22 @@ class Metagrammar(object):
         else:
             raise SyntaxError("Expected symbol \'PLAIN STRING\' or \"REGEX\", got %s on line %d, column %d" % (t.typ, t.line, t.col))
         return val
-
+#8 + 2 * ( 4 + 9 )
 if __name__ == "__main__":
     text = '''#Example: algebric expression evaluator
 <delim>:"\s"
 
-Formula():
+Num: "[0-9]+"
+OpExpr: '+' | '-'
+OpProduct: '*' | '/'
+
+!Formula():
     expansion:
         result = Expr()
     end:
     {
         print(result)
     }
-
-Num: "[0-9]+"
-OpExpr: '+' | '-'
-OpProduct: '*' | '/'
 
 Expr():
     begin: {
@@ -395,7 +404,7 @@ Number():
         # if rule.fn:
         #     print('Functions: ' + repr(rule.fn))
 
-    print('Top rule: ' + repr(g.topRule))
+    print('Top rule: ' + repr(g.top_rule))
     print('Parsing input:')
     parser = Parser(g)    
     res = parser.parse(input())

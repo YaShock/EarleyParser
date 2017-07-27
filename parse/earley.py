@@ -75,7 +75,7 @@ class Parser(object):
     def parse(self, text):
         self.tokenize(text)
         self.__init_states(text)
-        self.state_list[0].add(State(self.grammar.topRule, 0, 0, 0))
+        self.state_list[0].add(State(self.grammar.top_rule, 0, 0, 0))
         for k in range(len(self.tokens)+1):
             # print("\nk = %d" % k)
             active = set(self.state_list[k])
@@ -96,7 +96,7 @@ class Parser(object):
             #     print(state)
         result = []
         for st in self.state_list[-1]:
-            if st.rule == self.grammar.topRule:
+            if st.rule == self.grammar.top_rule:
                 result.append(self.construct_tree(st))
         return result
 
