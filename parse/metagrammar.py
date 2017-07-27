@@ -1,5 +1,5 @@
-from grammar import Grammar, Term, Variable, Rule, Production
-from earley import Parser
+from .grammar import Grammar, Term, Variable, Rule, Production
+from .earley import Parser
 import importlib
 import string
 from collections import namedtuple
@@ -10,8 +10,6 @@ def contains_whitespace(s):
     return any([c in s for c in string.whitespace])
 
 Token = namedtuple('Token', ['typ', 'value', 'line', 'col'])
-
-
 
 class Metagrammar(object):
     """docstring for Metagrammar"""
@@ -85,7 +83,7 @@ class Metagrammar(object):
 
     def _set_rule_functions(self, output_filename):
         # trim '.py' from the file name
-        module = importlib.import_module(output_filename[0:-3])
+        module = importlib.import_module(output_filename[0:-3].replace('/', '.'))
         for rule in self.grammar.rules:
             value = module.dict.get(id(rule))
             rule.fn = value
@@ -328,70 +326,11 @@ class Metagrammar(object):
         else:
             raise SyntaxError("Expected symbol \'PLAIN STRING\' or \"REGEX\", got %s on line %d, column %d" % (t.typ, t.line, t.col))
         return val
-#8 + 2 * ( 4 + 9 )
+
 if __name__ == "__main__":
-    text = '''#Example: algebric expression evaluator
-<delim>:"\s"
-
-Num: "[0-9]+"
-OpExpr: '+' | '-'
-OpProduct: '*' | '/'
-
-!Formula():
-    expansion:
-        result = Expr()
-    end:
-    {
-        print(result)
-    }
-
-Expr():
-    begin: {
-        a = 0
-        b = 0
-        op = '+'
-    }
-    expansion:
-        a = Term() |
-        a = Expr(), op = OpExpr, b = Term()
-    end:
-    {
-        if op == '+':
-            return a + b
-        else:
-            return a - b
-    }
-
-Term():
-    begin: {
-        a = 0
-        b = 1
-        op = '*'
-    }
-    expansion:
-        a = Factor() |
-        a = Term(), op = OpProduct, b = Factor()
-    end: {
-        if op == '*':
-            return a * b
-        else:
-            return a / b
-    }
-
-Factor():
-    expansion:
-        a = Number() |
-        '(', a = Expr(), ')'
-    end: {
-        return a
-    }
-
-Number():
-    expansion:
-        num = Num
-    end: {
-        return int(num)
-    }'''
+    text = ''
+    with open('grammar.cf', 'r') as grammar_file:
+        text = grammar_file.read()
 
     mg = Metagrammar()
     g = mg.process_grammar(text, 'functions.py')

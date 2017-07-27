@@ -1,29 +1,62 @@
-//<delim>		->		'[,;]'
-GAMMA 		-> 		Command
-Command 	->		Transform | Generate | Request | LoadFile
-LoadFile 	-> 		'load' StringTerm
-Generate 	-> 		GenerateTerm 'word' 'cloud'
-Transform 	-> 		Modify | Delete
-Modify 		-> 		ModTerm TextObject 'to' TransformFunction
-Modify 		->		ModTerm 'to' TransformFunction
-TransformFunction -> FunctionLower | FunctionUpper
-FunctionLower -> 'lower' 'case' | 'lower'
-FunctionUpper -> 'upper' 'case' | 'upper'
-Delete -> DelTerm Object
-Request -> ReqTerm Object
-Object -> 'numbers' | 'punctuation' | StopWords | WordList | WhiteSpaces | FreqWords
-SparseWords -> WordTerm 'sparsity' FloatTerm
-FreqWords -> WordTerm 'frequency' 'between' FloatTerm 'and' FloatTerm
-StopWords -> Language 'stopwords' | Language 'stop' 'words'
-Language -> 'english' | 'german' | 'hungarian'
-TextObject -> 'text' | 'document'
-ModTerm -> 'modify' | 'transform' | 'convert'
-DelTerm -> 'delete' | 'remove' | 'strip' | 'take' 'out'
-ReqTerm -> 'get' | 'find' | 'what' 'are' | 'what' 'is'
-WordTerm -> 'words' | 'terms'
-GenerateTerm -> 'create' | 'generate' | 'make'
-WhiteSpaces -> 'white' 'space' | 'whitespace'
-WordList -> WordTerm ':' W
-W -> W W | StringTerm
-StringTerm -> '[A-Za-z]*'
-FloatTerm -> '[0-9]*.?[0-9]+'
+#Example: algebric expression evaluator
+<delim>:"\s"
+
+Num: "[0-9]+"
+OpExpr: '+' | '-'
+OpProduct: '*' | '/'
+
+!Formula():
+    expansion:
+        result = Expr()
+    end:
+    {
+        print(result)
+    }
+
+Expr():
+    begin: {
+        a = 0
+        b = 0
+        op = '+'
+    }
+    expansion:
+        a = Term() |
+        a = Expr(), op = OpExpr, b = Term()
+    end:
+    {
+        if op == '+':
+            return a + b
+        else:
+            return a - b
+    }
+
+Term():
+    begin: {
+        a = 0
+        b = 1
+        op = '*'
+    }
+    expansion:
+        a = Factor() |
+        a = Term(), op = OpProduct, b = Factor()
+    end: {
+        if op == '*':
+            return a * b
+        else:
+            return a / b
+    }
+
+Factor():
+    expansion:
+        a = Number() |
+        '(', a = Expr(), ')'
+    end: {
+        return a
+    }
+
+Number():
+    expansion:
+        num = Num
+    end: {
+        return int(num)
+    }
