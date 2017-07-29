@@ -1,13 +1,8 @@
 from .grammar import Grammar, Term, Variable, Rule, Production
 from .earley import Parser
 import importlib
-import string
 from collections import namedtuple
 import re
-import os
-
-def contains_whitespace(s):
-    return any([c in s for c in string.whitespace])
 
 Token = namedtuple('Token', ['typ', 'value', 'line', 'col'])
 
@@ -72,8 +67,6 @@ class Metagrammar(object):
         return val
 
     def process_grammar(self, grammar_text, output_filename):
-        # curpath = os.path.abspath(os.curdir)
-        # print("Current path is: %s" % curpath)
         with open(output_filename, 'w') as o:
             self.output = o
             o.write('dict = {}\n')
@@ -198,7 +191,6 @@ class Metagrammar(object):
 
     def _write_rule_choice(self, rule, choice):
         for idx, term in enumerate(choice):
-            # self.output.write('        print(\'%s \' + repr(node.children[%i].data))\n' % (idx, idx))
             if isinstance(term[1], Variable):
                 var = 'node.children[%i]' % idx
                 params = [var]
@@ -211,7 +203,6 @@ class Metagrammar(object):
                 else:
                     assign = ''
                 self.output.write('        %s%s.fn(%s)\n' % (assign, var, paramString))
-                #'|'.join('(?P<%s>%s)' % pair for pair in token_specification)
 
     def _parse_rule_body(self):
         t = self.current_token
@@ -232,8 +223,6 @@ class Metagrammar(object):
         self._accept('COLON')
         self._expect('PYTHON_CODE')
         return self.current_token.value[1:-1]
-        # python_code = self._accept('PYTHON_CODE')
-        # return python_code[1:-1]
 
     def _parse_expansion_block(self):
         self._accept('expansion')
@@ -247,8 +236,11 @@ class Metagrammar(object):
         self._accept('COLON')
         self._expect('PYTHON_CODE')
         return self.current_token.value[1:-1]
-        # python_code = self._accept('PYTHON_CODE')
-        # return python_code[1:-1]
+
+    # def _normalize_python_code(self, code):
+    #     lines = code.splitlines()
+    #     minIden = 0
+    #     for line in lines:
 
     def _parse_exp_choices(self):
         choices = [self._parse_exp_product()]
@@ -285,7 +277,6 @@ class Metagrammar(object):
             if self.next_token.typ == 'LPAREN':
                 rule = self._parse_rule_name()
                 term = Variable(rule[0])
-                print('PARAM: %s' % rule[1])
                 params = rule[1]
             else:
                 token = self._accept('ID')
