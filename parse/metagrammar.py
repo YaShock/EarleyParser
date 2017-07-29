@@ -1,10 +1,11 @@
-from .grammar import Grammar, Term, Variable, Rule, Production
-from .earley import Parser
 import importlib
 from collections import namedtuple
 import re
+import sys
 
 Token = namedtuple('Token', ['typ', 'value', 'line', 'col'])
+Variable = namedtuple('Variable', ['name'])
+Rule = namedtuple('Variable', ['name', 'params'])
 
 class Metagrammar(object):
     """docstring for Metagrammar"""
@@ -31,6 +32,7 @@ class Metagrammar(object):
         self.tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
         self.get_token = re.compile(self.tok_regex).match
         self.keywords = {'begin', 'expansion', 'end'}
+        self.log = False
 
     def _tokenize(self, s):
         line = 1
@@ -66,23 +68,28 @@ class Metagrammar(object):
         self._next()
         return val
 
+    def _log(self, message):
+        if self.log:
+            print(message)
+
     def process_grammar(self, grammar_text, output_filename):
         with open(output_filename, 'w') as o:
             self.output = o
-            o.write('dict = {}\n')
+            # o.write('dict = {}\n')
             self._parse_grammar(grammar_text)
-        self._set_rule_functions(output_filename)
-        return self.grammar
+        # self._set_rule_functions(output_filename)
+        # return self.grammar
 
-    def _set_rule_functions(self, output_filename):
-        # trim '.py' from the file name
-        module = importlib.import_module(output_filename[0:-3].replace('/', '.'))
-        for rule in self.grammar.rules:
-            value = module.dict.get(id(rule))
-            rule.fn = value
+    # def _set_rule_functions(self, output_filename):
+    #     # trim '.py' from the file name
+    #     module = importlib.import_module(output_filename[0:-3].replace('/', '.'))
+    #     for rule in self.grammar.rules:
+    #         value = module.dict.get(id(rule))
+    #         rule.fn = value
 
     def _parse_grammar(self, grammar_text):
-        self.grammar = Grammar()
+        # self.grammar = Grammar()
+        self.output.write('grammar = Grammar()\n')
         self.tokens = self._tokenize(grammar_text)
         self.current_token = self.next_token = None
         self._next()
@@ -92,17 +99,14 @@ class Metagrammar(object):
         while(self.next_token):
             try:
                 self._next()
-                #print(self.current_token)
                 self._parse_stmt()
             except SyntaxError as error:
                 print(error)
-                #raise SyntaxError("Invalid syntax: %s, at line: %i" % (self.token, self.line_index))
 
     def _parse_stmt(self):
         t = self.current_token
         if t.typ == 'COMMENT':
-            print('Found comment: ' + repr(self.current_token.value))
-            #pass
+            self._log('Found comment: ' + repr(self.current_token.value))
         elif t.typ == 'LT':
             self._parse_option()
         elif t.typ == 'EXCL':
@@ -127,8 +131,9 @@ class Metagrammar(object):
         self._accept('GT')
         self._accept('COLON')
         val = self._parse_terminal()
-        self.grammar.delim = val
-        print('Found option: ' + repr((opt, val)))
+        self.output.write('grammar.delim = %s\n' % val)
+        # self.grammar.delim = val
+        self._log('Found option: ' + repr((opt, val)))
 
     def _parse_token(self):
         name = self.current_token.value
@@ -136,26 +141,28 @@ class Metagrammar(object):
         self._accept('COLON')
         product = self._parse_token_product()
         for term in product:
-            rule = Rule(Variable(name), Production(term))
-            self.grammar.add_rule(rule)
-            self._write_token_function(rule)
-        print('Found token: ' + repr((name, product)))
+            # rule = Rule(Variable(name), Production(term))
+            # self.grammar.add_rule(rule)
+            self.output.write('%s = Rule(Variable(%s), Production(Term(\'%s\')))\n' % (name, name, term))
+            # self._write_token_function(rule)
+        self._log('Found token: ' + repr((name, product)))
 
     def _write_token_function(self, rule):
         self.output.write('def %s_%s_fn(node):\n' % (rule.variable.name, id(rule)))
         self.output.write('        return node.children[0].data.value\n\n')
-        self.output.write('dict[%i] = %s_%s_fn\n\n' % (id(rule), rule.variable.name, id(rule)))
+        self.output.write('%s.fn = %s_%s_fn\n\n' % (rule.variable.name, rule.variable.name, id(rule)))
+        # self.output.write('dict[%i] = %s_%s_fn\n\n' % (id(rule), rule.variable.name, id(rule)))
 
     def _parse_token_product(self):
         t = self.current_token
         prod = []
-        prod.append(Term(self._parse_terminal()))
-        print('Found a token term: ' + t.value)
+        prod.append(self._parse_terminal())
+        self._log('Found a token term: ' + t.value)
         while self.next_token.typ == 'OR':
             self._next()
             t = self._next()
-            prod.append(Term(self._parse_terminal()))
-            print('Found a token term: ' + t.value)
+            prod.append(self._parse_terminal())
+            self._log('Found a token term: ' + t.value)
         return prod
 
     def _parse_rule(self):
@@ -164,16 +171,19 @@ class Metagrammar(object):
             self._accept('EXCL')
             is_top_rule = True
         (rule_name, rule_params) = self._parse_rule_name()
-        print('Found rule name: ' + repr(rule_name))
+        self._log('Found rule name: ' + repr(rule_name))
         self._accept('COLON')
         body = self._parse_rule_body()
         choices = body[0]
         for choice in choices:
             prod = Production(*[term[1] for term in choice])
             rule = Rule(Variable(rule_name), prod)
-            self.grammar.add_rule(rule)
+            prod_str = ', '.join('%s' % term for term in prod)            
+            self.output.write('%s = Rule(Variable(%s), Production(%s))\n' % (rule_name, rule_name, prod_str))
+            # self.grammar.add_rule(rule)
             if is_top_rule:
-                self.grammar.top_rule = rule
+                self.output.write('grammar.top_rule = rule\n')
+                # self.grammar.top_rule = rule
             self._write_rule_function(rule, rule_params, choice, body[1], body[2])
 
     def _write_rule_function(self, rule, rule_params, choice, begin, end):
@@ -187,7 +197,8 @@ class Metagrammar(object):
         self._write_rule_choice(rule, choice)
         if end:
             self.output.write(end + '\n')
-        self.output.write('dict[%i] = %s_%s_fn\n\n' % (id(rule), rule.variable.name, id(rule)))
+        self.output.write('%s.fn = %s_%s_fn\n\n' % (rule.variable.name, rule.variable.name, id(rule)))
+        # self.output.write('dict[%i] = %s_%s_fn\n\n' % (id(rule), rule.variable.name, id(rule)))
 
     def _write_rule_choice(self, rule, choice):
         for idx, term in enumerate(choice):
@@ -210,12 +221,12 @@ class Metagrammar(object):
         if t.typ == 'begin':
             begin = self._parse_begin_block()
             self._next()
-            print('Found begin block: ' + begin)
+            self._log('Found begin block: ' + begin)
         choices = self._parse_expansion_block()
         t = self.current_token
         if t.typ == 'end':
             end = self._parse_end_block()
-            print('Found end block: ' + end)
+            self._log('Found end block: ' + end)
         return (choices, begin, end)
 
     def _parse_begin_block(self):
@@ -228,7 +239,7 @@ class Metagrammar(object):
         self._accept('expansion')
         self._accept('COLON')
         choices = self._parse_exp_choices()
-        print('Found expansion choices: ' + repr(choices))
+        self._log('Found expansion choices: ' + repr(choices))
         return choices
 
     def _parse_end_block(self):
@@ -237,28 +248,23 @@ class Metagrammar(object):
         self._expect('PYTHON_CODE')
         return self.current_token.value[1:-1]
 
-    # def _normalize_python_code(self, code):
-    #     lines = code.splitlines()
-    #     minIden = 0
-    #     for line in lines:
-
     def _parse_exp_choices(self):
         choices = [self._parse_exp_product()]
-        print('Found expansion product: ' + repr(choices[0]))
+        self._log('Found expansion product: ' + repr(choices[0]))
         while self.current_token.typ == 'OR':
             self._next()
             prod = self._parse_exp_product()
-            print('Found expansion product: ' + repr(prod))
+            self._log('Found expansion product: ' + repr(prod))
             choices.append(prod)
         return choices
 
     def _parse_exp_product(self):
         prod = [self._parse_exp_term()]
-        print('Found expansion term: ' + repr(prod[0]))
+        self._log('Found expansion term: ' + repr(prod[0]))
         while self.current_token.typ == 'COMMA':
             self._next()
             term = self._parse_exp_term()
-            print('Found expansion term: ' + repr(term))
+            self._log('Found expansion term: ' + repr(term))
             prod.append(term)
         return prod
 
@@ -271,16 +277,16 @@ class Metagrammar(object):
             self._next()
         t = self.current_token
         if t.typ == 'SINGLE_QUOTED' or t.typ == 'DOUBLE_QUOTED':
-            term = Term(self._parse_terminal())
+            term = 'Term(\'%s\')' % self._parse_terminal()
             self._next()
         elif t.typ == 'ID':
             if self.next_token.typ == 'LPAREN':
                 rule = self._parse_rule_name()
-                term = Variable(rule[0])
+                term = 'Variable(\'%s\')' % rule[0]
                 params = rule[1]
             else:
                 token = self._accept('ID')
-                term = Variable(token)
+                term = 'Variable(\'%s\')'% token
         else:
             raise SyntaxError("Expected symbol \'TERMINAL\', \"REGEX\", TOKEN NAME or RULE NAME, got %s on line %d, column %d" % (t.typ, t.line, t.col))
         return (assignment, term, params)
@@ -293,7 +299,7 @@ class Metagrammar(object):
         params = None
         if t.typ == 'ID':
             params = self._parse_params()
-            print('Found params: ' + repr(params))
+            self._log('Found params: ' + repr(params))
         elif t.typ == 'RPAREN':
             pass
         else:
@@ -319,27 +325,35 @@ class Metagrammar(object):
         return val
 
 if __name__ == "__main__":
-    text = ''
-    with open('grammar.cf', 'r') as grammar_file:
-        text = grammar_file.read()
+    if len(sys.argv) == 3:
+        # from grammar import Grammar, Term, Variable, Rule, Production
+        # from earley import Parser
 
-    mg = Metagrammar()
-    g = mg.process_grammar(text, 'functions.py')
-    print('------------CREATED GRAMMAR------------')
-    print('Delim option: ' + g.delim)
-    print('Terminals: ' + repr(g.terminals))
-    print('Rules:')
-    for rule in g.rules:
-        print(rule)
-        # if rule.fn:
-        #     print('Functions: ' + repr(rule.fn))
+        grammar_filename = sys.argv[1]
+        output_filename = sys.argv[2]
 
-    print('Top rule: ' + repr(g.top_rule))
-    print('Parsing input:')
-    parser = Parser(g)    
-    res = parser.parse(input())
-    #print(repr(parser.tokens))
-    for r in res:
-        r.print()
-        # print('Walking')
-        r.walk()
+        text = ''
+        with open(grammar_filename, 'r') as grammar_file:
+            text = grammar_file.read()
+
+        mg = Metagrammar()
+        # mg.log = True
+        mg.process_grammar(text, output_filename)
+        # print('------------CREATED GRAMMAR------------')
+        # print('Delim option: ' + g.delim)
+        # print('Terminals: ' + repr(g.terminals))
+        # print('Rules:')
+        # for rule in g.rules:
+        #     print(rule)
+        #     # if rule.fn:
+        #     #     print('Functions: ' + repr(rule.fn))
+
+        # print('Top rule: ' + repr(g.top_rule))
+        # print('Parsing input:')
+        # parser = Parser(g)    
+        # res = parser.parse(input())
+        # #print(repr(parser.tokens))
+        # for r in res:
+        #     r.print()
+        #     # print('Walking')
+        #     r.walk()

@@ -81,15 +81,12 @@ class Grammar(object):
         self.top_rule = top_rule
         self.rules = set()
         self.terminals = set()
-        self.variables = {}
         self.delim = None
 
     def __iter__(self):
         return iter(self.rules)
 
-    def add_rule(self, rule, fn_enter=None, fn_exit=None):
-        rule.fn_enter = fn_enter
-        rule.fn_exit = fn_exit
+    def add_rule(self, rule):
         self.rules.add(rule)
         if self.top_rule is None:
             self.top_rule = rule
