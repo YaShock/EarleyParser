@@ -1,19 +1,19 @@
 from tkinter import ttk
 import tkinter as tk
+from parse import metagrammar
 
 app_text = '''from parse import *
+import generated.grammar
 
-text = ''
-with open('generated/grammar.cf', 'r') as grammar_file:
-    text = grammar_file.read()
-
-mg = metagrammar.Metagrammar()
-g = mg.process_grammar(text, 'generated/functions.py')
-parser = earley.Parser(g)    
-res = parser.parse(input())
-for r in res:
-    r.print()
-    r.walk()'''
+g = generated.grammar.grammar
+parser = earley.Parser(g)
+inp = input()
+while inp != 'quit':
+    res = parser.parse(inp)
+    for r in res:
+        r.print()
+        r.walk()
+    inp = input()'''
 
 class Application(tk.Frame):
     def __init__(self, master=None):
@@ -41,9 +41,11 @@ class Application(tk.Frame):
         self.frame.pack(side="top", fill="both", expand=True, anchor="center", pady=15)
 
     def compile(self):
-        grammar_file = open('generated/grammar.cf', 'w')
-        grammar_file.write(self.text_cf.get("1.0","end-1c"))
-        grammar_file.close()
+        mg = metagrammar.Metagrammar()
+        mg.process_grammar(self.text_cf.get("1.0","end-1c"), 'generated/grammar.py')
+        # grammar_file = open('generated/grammar.cf', 'w')
+        # grammar_file.write(self.text_cf.get("1.0","end-1c"))
+        # grammar_file.close()
 
     def compile_and_run(self):
         self.compile()

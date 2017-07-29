@@ -1,12 +1,12 @@
 import re
 
-class Term(object):
-    """docstring for Term"""
+class Terminal(object):
+    """docstring for Terminal"""
     def __init__(self, matcher_text):
         self.value = None
         self.matcher_text = matcher_text
     def __eq__(self, other):
-        if not isinstance(other, Term):
+        if not isinstance(other, Terminal):
             return False
         return self.matcher_text == other.matcher_text
     def __ne__(self, other):

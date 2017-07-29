@@ -1,5 +1,5 @@
 #Example: algebric expression evaluator
-<delim>:"\s"
+#<delim>:"\s"
 
 Num: "[0-9]+"
 OpExpr: '+' | '-'
