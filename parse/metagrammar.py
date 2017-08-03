@@ -12,7 +12,7 @@ class Metagrammar(object):
         token_specification = [
             ('COMMENT',  r'#.*'),
             ('PYTHON_CODE',  r'{(.|\n)*?}'),
-            ('DOUBLE_QUOTED',  r'\".*?\"'),
+            ('DOUBLE_QUOTED',  r'(\"(\\.|[^\"])*\")'),
             ('SINGLE_QUOTED',     r'\'.*?\''),
             ('ID',      r'[a-zA-Z_]\w*'),
             ('NUMBER',      r'\d'),
@@ -309,9 +309,9 @@ class Metagrammar(object):
     def _parse_terminal(self):
         t = self.current_token
         if t.typ == 'SINGLE_QUOTED':
-            val = re.escape(t.value.strip('\''))
+            val = re.escape(t.value[1:-1])
         elif t.typ == 'DOUBLE_QUOTED':
-            val = t.value.strip('\"')
+            val = t.value[1:-1]
         else:
             raise SyntaxError("Expected symbol \'PLAIN STRING\' or \"REGEX\", got %s on line %d, column %d" % (t.typ, t.line, t.col))
         return val
