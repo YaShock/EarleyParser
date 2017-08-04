@@ -1,9 +1,9 @@
 #Example: algebric expression evaluator
-#<delim>:"\s"
 
 Num: "[0-9]+"
 OpExpr: '+' | '-'
 OpProduct: '*' | '/'
+SKIP: '\s'
 
 !Formula():
     expansion:

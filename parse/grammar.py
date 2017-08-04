@@ -81,17 +81,23 @@ class Grammar(object):
         self.top_rule = top_rule
         self.rules = set()
         self.terminals = set()
-        self.delim = None
+        self.terminal_map = {}
 
     def __iter__(self):
         return iter(self.rules)
 
     def add_rule(self, rule):
+        # print(repr(rule))
         self.rules.add(rule)
         if self.top_rule is None:
             self.top_rule = rule
         for term in rule.production.terms:
             if not isinstance(term, Variable):
+                if rule.variable.name in self.terminal_map:
+                    val = self.terminal_map[rule.variable.name]
+                    self.terminal_map[rule.variable.name] = '%s|%s' % (val, term)
+                else:
+                    self.terminal_map[rule.variable.name] = term#TODO: "ORing" terms with the same variable
                 self.terminals.add(term)
 
     def is_terminal(self, token):

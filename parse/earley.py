@@ -59,22 +59,36 @@ class Parser(object):
     """docstring for Parser"""
     def __init__(self, grammar):
         self.grammar = grammar
+        self.grammar.terminal_map['NEWLINE'] = r'\n'
+        self.grammar.terminals.add(r'\n')
+        self.tok_regex = '|'.join('(?P<%s>%s)' % (key, val) for key, val in self.grammar.terminal_map.items())
+        self.get_token = re.compile(self.tok_regex).match
 
-    def __init_states(self, text):
+    def __init_states(self):
         self.state_list = []
-        self.text = text
         for k in range(len(self.tokens)+1):
             self.state_list.append(set())
 
-    def tokenize(self, text):
-        if self.grammar.delim:
-            self.tokens = re.split(self.grammar.delim, text)
-        else:
-            self.tokens = list(text)
+    def _tokenize(self, inp):
+        line = 1
+        pos = line_start = 0
+        mo = self.get_token(inp)
+        while mo is not None:
+            typ = mo.lastgroup
+            if typ == 'NEWLINE':
+                line_start = pos
+                line += 1
+            elif typ != 'SKIP':
+                val = mo.group(typ)
+                yield val
+            pos = mo.end()
+            mo = self.get_token(inp, pos)
+        if pos != len(inp):
+            raise RuntimeError('Unexpected character %r on line %d on pos %d' %(inp[pos], line, pos+1))
 
-    def parse(self, text):
-        self.tokenize(text)
-        self.__init_states(text)
+    def parse(self, inp):
+        self.tokens = list(self._tokenize(inp))
+        self.__init_states()
         self.state_list[0].add(State(self.grammar.top_rule, 0, 0, 0))
         for k in range(len(self.tokens)+1):
             # print("\nk = %d" % k)
