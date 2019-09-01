@@ -39,3 +39,6 @@ coverage.xml
 # Translations
 *.mo
 
+# Generated files
+app.py
+output

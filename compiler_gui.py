@@ -2,7 +2,7 @@ from tkinter import ttk
 import tkinter as tk
 from parse import metagrammar
 
-app_text = '''from parse import *
+app_text = '''from parse import earley
 import generated.grammar
 
 g = generated.grammar.grammar
