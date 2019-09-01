@@ -13,7 +13,8 @@ while inp != 'quit':
     for r in res:
         r.print()
         r.walk()
-    inp = input()'''
+    inp = input()
+'''
 
 class Application(tk.Frame):
     def __init__(self, master=None):
