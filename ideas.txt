@@ -1,4 +1,6 @@
+-refine examples
 -begin and end function block instead of enter/exit functions
+	-remove curly brace requirement, use identation and new lines to identify python code
 -syntax highlighter
 --specify metagrammar (EBNF vs my own)
 --grammar validator
@@ -14,3 +16,4 @@
 examples:
 -javacc
 -antlr
+

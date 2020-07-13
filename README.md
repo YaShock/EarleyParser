@@ -6,9 +6,26 @@ This repository contains a flexible parser generator which can be build by addin
 
 There is an example grammar included in examples/grammar.cf that produces a simple algebraic expression evaluator.
 
+## Building grammars
+
+The algorithm itself is found in *earley.py* module. The Parser object needs a grammar instance, which is given in *grammar.py* module. To initialize the Parser just create a Grammar instance and add production rules.
+
+## Generating grammars
+
+The alternative method for creating grammars is to generate them with a Metagrammar. It parses an EBNF based grammar description and generates the desired grammar. The description consists of tokens and production rules with a powerful method to add Python function definitions which are executed before or after the rule is visited.
+
+### Tokens
+
+Tokens are given by names and consuming values. The values can be regular expressions (given by "" quotes) or literals (given by '' quotes) with or operators. There is a special token, SKIP, that expresses which tokens should ignored in the generated grammar.
+
+### Production rules
+
+Production rules are given with a function notation, where the function name is the left side of the rule, the right side is given within the 'expansion', where the given variable can be expanded to every set of symbol strings seperated by | (or) operators.
+The string of terminals is given by comma seperated (,) list, where each variable can be saved in a Python identifier that can be accessed in 'end' section. The 'begin' describes a Python code that runs before the rule is visited, and the 'end' describes a Python code that runs after the rule is visited.
+
 ## Metacompiler
 
-There are two additional programs to aid parser generation. For CLI you can use compiler.py and a simple GUI application is contained in compiler_gui.py. 
+There are two additional programs to aid parser generation. For CLI you can use compiler.py and a simple GUI application is contained in *compiler_gui.py*. 
 
 ## Building
 

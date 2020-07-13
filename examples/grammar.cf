@@ -1,62 +1,71 @@
-#Example: algebric expression evaluator
+# Example: algebraic expression evaluator
 
+# Tokens are given by names and consuming values
+# For regular expressions use " " quotes
 Num: "[0-9]+"
+# For string literals use ' ' quotes
+# Tokens can be combined with | (or) operator
 OpExpr: '+' | '-'
 OpProduct: '*' | '/'
+
+# SKIP is a special token that expresses which tokens should ignored in the generated grammar
 SKIP: '\s'
 
+# Top level rules is donated with a !
+# Exactly one top level rule must be given
 !Formula():
     expansion:
         result = Expr()
     end:
-    {
         print(result)
-    }
+
+# Production rules are given with a function notation, where the function name is the left side of the rule
+# The right side is given within the 'expansion', where the given variable can be expanded to every set of symbols seperated by | (or) operators
+# The string of terminals is given by comma seperated (,) list, where each variable can be saved in a Python identifier that can be accessed in 'end' section
+# 'begin' describes a Python code that runs before the rule
+# 'end' describes a Python code that runs after the rule
 
 Expr():
-    begin: {
+    begin:
         a = 0
         b = 0
         op = '+'
-    }
+
     expansion:
         a = Term() |
         a = Expr(), op = OpExpr, b = Term()
+
     end:
-    {
         if op == '+':
             return a + b
         else:
             return a - b
-    }
 
 Term():
-    begin: {
+    begin:
         a = 0
         b = 1
         op = '*'
-    }
+
     expansion:
         a = Factor() |
         a = Term(), op = OpProduct, b = Factor()
-    end: {
+
+    end:
         if op == '*':
             return a * b
         else:
             return a / b
-    }
 
 Factor():
     expansion:
         a = Number() |
         '(', a = Expr(), ')'
-    end: {
+    end:
         return a
-    }
 
 Number():
     expansion:
         num = Num
-    end: {
+    end:
         return int(num)
-    }
