@@ -1,5 +1,6 @@
 # Example: algebraic expression evaluator
 
+# <delim>: "\s"
 # Tokens are given by names and consuming values
 # For regular expressions use " " quotes
 Num: "[0-9]+"
@@ -8,8 +9,10 @@ Num: "[0-9]+"
 OpExpr: '+' | '-'
 OpProduct: '*' | '/'
 
+# All token and rule identifiers have to be ascii alpha characters
+
 # SKIP is a special token that expresses which tokens should ignored in the generated grammar
-SKIP: '\s'
+SKIP: "\s"
 
 # Top level rules is donated with a !
 # Exactly one top level rule must be given
@@ -22,8 +25,38 @@ SKIP: '\s'
 # Production rules are given with a function notation, where the function name is the left side of the rule
 # The right side is given within the 'expansion', where the given variable can be expanded to every set of symbols seperated by | (or) operators
 # The string of terminals is given by comma seperated (,) list, where each variable can be saved in a Python identifier that can be accessed in 'end' section
-# 'begin' describes a Python code that runs before the rule
-# 'end' describes a Python code that runs after the rule
+# 'begin' describes a Python code that runs before the rule is visited
+# 'end' describes a Python code that runs after the rule is visited
+
+# 'literal'
+# "regex"
+# Token
+# Rule(param1, param2)
+# a = 'literal'
+# a = "regex"
+# a = Token
+# a = Rule(param1, param2)
+
+# Test():
+#     expansion:
+#         '(', a = Expr(), ')' |
+#         a = Number()
+#     expansion:
+#         '(', a = Expr(), ')'
+#         | a = Number()
+#     expansion:
+#         '('
+#         ,
+#         a = Expr(), ')'
+#         |
+#         a = Number()
+#     expansion:
+#         a = Term() |
+#         a = Expr(), op = OpExpr,
+#         b = Term()
+#     expansion:
+#         a = Term() | a = Expr(), op = OpExpr, b = Term()
+
 
 Expr():
     begin:
@@ -33,7 +66,8 @@ Expr():
 
     expansion:
         a = Term() |
-        a = Expr(), op = OpExpr, b = Term()
+        a = Expr(), op = OpExpr,
+        b = Term()
 
     end:
         if op == '+':

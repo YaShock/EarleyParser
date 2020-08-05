@@ -8,9 +8,9 @@ Usage:
     compiler.py --version
 
 Options:
-    -h --help       Show this screen.
-    --version       Show version.
-    -a --app=<app>  Filename of the generated application [default: app.py].
+    -h --help               Show this screen.
+    --version               Show version.
+    -a --app=<app>          Filename of the generated application [default: app.py].
     -g --gendir=<gendir>    Path to generated parser [default: generated].
 
 """
@@ -43,10 +43,9 @@ def build(source_path, gen_dir):
     mg = metagrammar.Metagrammar()
     if not os.path.isdir(gen_dir):
         os.mkdir(gen_dir)
-    with open(source_path) as src:
-        mg.process_grammar(
-            src.read(),
-            os.path.join(gen_dir, 'grammar.py'))
+    mg.process_grammar(
+        source_path,
+        os.path.join(gen_dir, 'grammar.py'))
 
 
 def bundle(out_dir, app_path, gen_dir):

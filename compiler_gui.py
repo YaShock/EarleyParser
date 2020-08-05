@@ -1,6 +1,7 @@
 from tkinter import ttk
 import tkinter as tk
 from parse import metagrammar
+from io import StringIO
 
 app_text = '''from parse import earley
 import generated.grammar
@@ -42,8 +43,10 @@ class Application(tk.Frame):
         self.frame.pack(side="top", fill="both", expand=True, anchor="center", pady=15)
 
     def compile(self):
+        # TODO: fix grammar input
         mg = metagrammar.Metagrammar()
-        mg.process_grammar(self.text_cf.get("1.0","end-1c"), 'generated/grammar.py')
+        string_in = StringIO(self.text_cf.get("1.0","end-1c"))
+        mg.process_grammar(string_in, 'generated/grammar.py')
         # grammar_file = open('generated/grammar.cf', 'w')
         # grammar_file.write(self.text_cf.get("1.0","end-1c"))
         # grammar_file.close()

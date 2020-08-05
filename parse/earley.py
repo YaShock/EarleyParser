@@ -1,9 +1,11 @@
 import re
 import copy
 
+
 class State(object):
     """docstring for State"""
     num = 0
+
     def __init__(self, rule, dotPos, orig_pos, end_pos, back_pointers=[]):
         self.index = State.num
         State.num += 1
@@ -12,25 +14,32 @@ class State(object):
         self.orig_pos = orig_pos
         self.end_pos = end_pos
         self.back_pointers = list(back_pointers)
+
     def __repr__(self):
         terms = [str(p) for p in self.rule.production]
         terms.insert(self.dotPos, u"$")
         pointers = " ".join(str(i.index) for i in self.back_pointers)
         return "%d. %-1s -> %-8s [%s-%s] [%-s]" % (self.index, self.rule.variable, " ".join(terms), self.orig_pos, self.end_pos, pointers)
+
     def __eq__(self, other):
         if not isinstance(other, State):
             return False
         return (self.rule, self.dotPos, self.orig_pos, self.back_pointers) == (other.rule, other.dotPos, other.orig_pos, other.back_pointers)
+
     def __ne__(self, other):
         return not (self == other)
+
     def __hash__(self):
         return hash((self.rule, self.dotPos, self.orig_pos))
+
     def finished(self):
         return self.dotPos >= len(self.rule.production)
+
     def next(self):
         if self.finished():
             return None
         return self.rule.production[self.dotPos]
+
 
 class Tree(object):
     def __init__(self, data=None, children=None):
@@ -39,15 +48,19 @@ class Tree(object):
             self.children.extend(children)
         self.data = data
         self.fn = None
+
     def __getitem__(self, index):
         return self.children[index]
+
     def add(self, child):
         self.children.append(child)
+
     def print(self, level=0):
-        text = "\t"*level+str(self.data)
+        text = "\t" * level + str(self.data)
         print(text)
         for child in self.children:
-            child.print(level+1)
+            child.print(level + 1)
+
     def walk(self):
         self.fn(self)
         # if self.fn:
@@ -55,18 +68,21 @@ class Tree(object):
         # for child in self.children:
         #     child.walk()
 
+
 class Parser(object):
     """docstring for Parser"""
+
     def __init__(self, grammar):
         self.grammar = grammar
         self.grammar.terminal_map['NEWLINE'] = r'\n'
         self.grammar.terminals.add(r'\n')
-        self.tok_regex = '|'.join('(?P<%s>%s)' % (key, val) for key, val in self.grammar.terminal_map.items())
+        self.tok_regex = '|'.join('(?P<%s>%s)' % (key, val)
+                                  for key, val in self.grammar.terminal_map.items())
         self.get_token = re.compile(self.tok_regex).match
 
     def __init_states(self):
         self.state_list = []
-        for k in range(len(self.tokens)+1):
+        for k in range(len(self.tokens) + 1):
             self.state_list.append(set())
 
     def _tokenize(self, inp):
@@ -84,13 +100,14 @@ class Parser(object):
             pos = mo.end()
             mo = self.get_token(inp, pos)
         if pos != len(inp):
-            raise RuntimeError('Unexpected character %r on line %d on pos %d' %(inp[pos], line, pos+1))
+            raise RuntimeError(
+                'Unexpected character %r on line %d on pos %d' % (inp[pos], line, pos + 1))
 
     def parse(self, inp):
         self.tokens = list(self._tokenize(inp))
         self.__init_states()
         self.state_list[0].add(State(self.grammar.top_rule, 0, 0, 0))
-        for k in range(len(self.tokens)+1):
+        for k in range(len(self.tokens) + 1):
             # print("\nk = %d" % k)
             active = set(self.state_list[k])
             seen = set(self.state_list[k])
@@ -104,7 +121,7 @@ class Parser(object):
                     else:
                         self.complete(state, k)
                 seen |= active
-                active = self.state_list[k]-seen
+                active = self.state_list[k] - seen
             # print()
             # for state in self.state_list[k]:
             #     print(state)
@@ -123,12 +140,14 @@ class Parser(object):
         if k >= len(self.tokens):
             return
         if state.next().part_of(self.tokens[k]):
-            self.state_list[k+1].add(State(copy.deepcopy(state.rule), state.dotPos+1, state.orig_pos, k+1, state.back_pointers))
+            self.state_list[k + 1].add(State(copy.deepcopy(state.rule),
+                                             state.dotPos + 1, state.orig_pos, k + 1, state.back_pointers))
 
     def complete(self, state, k):
         for s in self.state_list[state.orig_pos]:
             if s.next() == state.rule.variable:
-                newState = State(s.rule, s.dotPos+1, s.orig_pos, k, s.back_pointers)
+                newState = State(s.rule, s.dotPos + 1,
+                                 s.orig_pos, k, s.back_pointers)
                 newState.back_pointers.append(state)
                 self.state_list[k].add(newState)
 
@@ -142,7 +161,8 @@ class Parser(object):
             node.fn = None
             if state.back_pointers:
                 if not self.grammar.is_terminal(state.rule.production[i]):
-                    node = self.construct_tree(state.back_pointers[j], level+1)
+                    node = self.construct_tree(
+                        state.back_pointers[j], level + 1)
                     j += 1
             node.data = state.rule.production[i]
             tree.add(node)

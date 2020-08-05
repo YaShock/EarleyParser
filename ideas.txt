@@ -1,19 +1,19 @@
--refine examples
--begin and end function block instead of enter/exit functions
-	-remove curly brace requirement, use identation and new lines to identify python code
--syntax highlighter
---specify metagrammar (EBNF vs my own)
---grammar validator
--ontology with grammar
--mongodb??
--grammar+code combined? -> functions
--web front-end for editor
--parse rule (instead of regular expressions)
--regular expression for variables?
--different parsers???
--look at ontology editors
+potential features:
+	- refine examples
+	- syntax highlighter
+	- grammar validator
+	- ontology with grammar
+	- mongodb??
+	- web front-end for editor
+	- parse rule (instead of regular expressions)
+	- regular expression for variables?
+	- different parsers???
+	- look at ontology editors
+
+finished:
+	- grammar + code
+	- metagrammar definition + compiler
 
 examples:
--javacc
--antlr
-
+	- javacc
+	- antlr
