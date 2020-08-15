@@ -21,7 +21,7 @@ class Metagrammar(object):
         self.symbols = []
         self.rule_id = 0
 
-        self.log = False
+        self.log = True
 
         token_specification = [
             ('COMMENT', r'#.*'),
@@ -70,6 +70,8 @@ class Metagrammar(object):
                 self._generate_output(output_filename)
             except SyntaxError as error:
                 print(error)
+                import traceback
+                traceback.print_exc()
 
     def _tokenize(self, input):
         line = 1
@@ -102,6 +104,8 @@ class Metagrammar(object):
                 ind_lvl = self._parse_indent(leading_ws, base_indent, line)
                 last_typ = 'PYTHON_CODE'
                 if ind_lvl < 2:
+                    self._log("Found Python code on line {}".format(
+                        python_start_line))
                     yield Token(
                         'PYTHON_CODE',
                         python_token,
@@ -164,6 +168,8 @@ class Metagrammar(object):
                         expect_indent = None
 
                     last_typ = typ
+                    self._log("Found token {}:{} at line {}, column {}".format(
+                        typ, val, line, mo.start()))
                     yield Token(typ, val, line, mo.start(), indent_level)
 
                 pos = mo.end()
@@ -205,11 +211,12 @@ class Metagrammar(object):
         return level
 
     def _parse_stmt_list(self):
+        self._next()
         while self.next_token:
-            self._next()
             self._parse_stmt()
 
     def _parse_stmt(self):
+        self._log('Begin statement')
         t = self.current_token
         # if t.typ == 'COMMENT':
             # self._log('Found comment: ' + repr(self.current_token.value))
@@ -230,10 +237,11 @@ class Metagrammar(object):
                     "Expected symbol '(' or ':', got {} on line {}, column {}".format(
                         nt.typ, nt.line, nt.col))
         else:
-            SyntaxError("Expected symbol \'!\' or an identifier, got %s on line %d, column %d" % (
+            raise SyntaxError("Expected symbol \'!\' or an identifier, got %s on line %d, column %d" % (
                 t.typ, t.line, t.col))
 
     def _parse_option(self):
+        self._log('Begin option')
         self._next()
         opt = self._accept('ID')
         t = self.current_token
@@ -247,6 +255,7 @@ class Metagrammar(object):
         self._log('Found option: ' + repr((opt, val)))
 
     def _parse_token(self):
+        self._log('Begin token')
         name = self.current_token.value
 
         if name in self.symbols:
@@ -261,18 +270,20 @@ class Metagrammar(object):
         return (name, product)
 
     def _parse_token_product(self):
+        self._log('Begin token product')
         t = self.current_token
         prod = []
         prod.append(self._parse_terminal())
         self._log('Found a token term: ' + t.value)
-        while self.next_token.typ == 'OR':
-            self._next()
+        while self.current_token.typ == 'OR':
+            # self._next()
             t = self._next()
             prod.append(self._parse_terminal())
             self._log('Found a token term: ' + t.value)
         return prod
 
     def _parse_rule(self, is_top_rule):
+        self._log('Begin rule')
         if is_top_rule:
             if self.top_level_rule_idx is not None:
                 raise SyntaxError(
@@ -285,33 +296,70 @@ class Metagrammar(object):
             raise SyntaxError('Redefinition of symbol {} on line {}'.format(
                 name, self.current_token.line))
 
+        rule_line = self.current_token.line
+
         self._log('Found rule name: ' + repr(name))
         self._accept('COLON')
-        body = self._parse_rule_body()
+        body = self._parse_rule_body(name, rule_line)
         self.symbols.append(name)
         return Rule(name, params, body[0], body[1], body[2])
 
-    def _parse_rule_body(self):
+    def _parse_rule_body(self, name, rule_line):
+        # Fix: a rule without 'end' block causes problems
+        self._log('Begin rule body')
+
+        begin = end = choices = None
         t = self.current_token
-        begin = end = None
-        if t.typ == 'begin':
-            begin = self._parse_python_block('begin')
-            self._next()
-            self._log('Found begin block:\n' + begin)
-        choices = self._parse_expansion_block()
-        t = self.current_token
-        if t.typ == 'end':
-            end = self._parse_python_block('end')
-            self._log('Found end block:\n' + end)
+
+        # Check if at least one block
+        if t.typ not in self.keywords:
+            raise SyntaxError(
+                "Expected a block name, got {} on line {}, column {}".format(
+                    t.typ, t.line, t.col))
+
+        while self.current_token and self.current_token.typ in self.keywords:
+            t = self.current_token
+
+            if t.typ == 'begin':
+                if begin:
+                    raise SyntaxError(
+                        "Duplicated 'begin' block for rule {} on line {}".format(
+                            name, t.line))
+                begin = self._parse_python_block('begin')
+                self._log('Found begin block:\n' + begin)
+            elif t.typ == 'end':
+                if end:
+                    raise SyntaxError(
+                        "Duplicated 'end' block for rule {} on line {}".format(
+                            name, t.line))
+                end = self._parse_python_block('end')
+                self._log('Found end block:\n' + end)
+            else:
+                if choices:
+                    raise SyntaxError(
+                        "Duplicated 'expansion' block for rule {} on line {}".format(
+                            name, t.line))
+                choices = self._parse_expansion_block()
+
+            # TODO: add error checks (duplicated block or missing expansion)
+            # if self.next_token and self.next_token.typ in self.keywords:
+            #     self._next()
+        if choices is None:
+            raise SyntaxError(
+                "No 'expansion' was defined for rule {} after line {}".format(
+                    name, rule_line))
+
         return (choices, begin, end)
 
     def _parse_python_block(self, block_name):
+        self._log('Begin python block {}'.format(block_name))
         self._accept(block_name)
         self._accept('COLON')
-        self._expect('PYTHON_CODE')
-        return self.current_token.value
+        return self._accept('PYTHON_CODE')
+        # return self.current_token.value
 
     def _parse_expansion_block(self):
+        self._log('Begin expansion')
         self._accept('expansion')
         self._accept('COLON')
         choices = self._parse_exp_choices()
@@ -319,6 +367,7 @@ class Metagrammar(object):
         return choices
 
     def _parse_exp_choices(self):
+        self._log('Begin expansion choices')
         choices = [self._parse_exp_product()]
         self._log('Found expansion product: ' + repr(choices[0]))
         while self.current_token.typ == 'OR':
@@ -329,6 +378,7 @@ class Metagrammar(object):
         return choices
 
     def _parse_exp_product(self):
+        self._log('Begin expansion product')
         prod = [self._parse_exp_term()]
         self._log('Found expansion term: ' + repr(prod[0]))
         while self.current_token.typ == 'COMMA':
@@ -339,6 +389,7 @@ class Metagrammar(object):
         return prod
 
     def _parse_exp_term(self):
+        self._log('Begin expansion term')
         assignment = None
         value = None
         params = None
@@ -350,7 +401,7 @@ class Metagrammar(object):
         if t.typ == 'SINGLE_QUOTED' or t.typ == 'DOUBLE_QUOTED':
             term_typ = 'Terminal'
             value = self._parse_terminal()
-            self._next()
+            # self._next()
         elif t.typ == 'ID':
             term_typ = 'Variable'
             if self.next_token.typ == 'LPAREN':
@@ -367,6 +418,7 @@ class Metagrammar(object):
         return Term(assignment, value, term_typ, params)
 
     def _parse_rule_name(self):
+        self._log('Begin rule name')
         name = self.current_token.value
         self._next()
         self._accept('LPAREN')
@@ -385,6 +437,7 @@ class Metagrammar(object):
         return (name, params)
 
     def _parse_params(self):
+        self._log('Begin rule params')
         params = [self._accept('ID')]
         while self.current_token.typ != 'RPAREN':
             self._accept('COMMA')
@@ -392,6 +445,7 @@ class Metagrammar(object):
         return params
 
     def _parse_terminal(self):
+        self._log('Begin terminal')
         t = self.current_token
         if t.typ == 'SINGLE_QUOTED':
             typ = 'Literal'
@@ -401,6 +455,7 @@ class Metagrammar(object):
             raise SyntaxError(
                 "Expected symbol 'LITERAL' or \"REGEX\", got {} on line {}, column {}".format(
                     t.typ, t.line, t.col))
+        self._next()
         return Terminal(typ, t.value[1:-1])
 
     def _next(self):
