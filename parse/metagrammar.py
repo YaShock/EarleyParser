@@ -21,7 +21,7 @@ class Metagrammar(object):
         self.symbols = []
         self.rule_id = 0
 
-        self.log = True
+        self.log = False
 
         token_specification = [
             ('COMMENT', r'#.*'),
@@ -534,7 +534,7 @@ class Metagrammar(object):
         rule_params = ['node']
         if params:
             rule_params.extend(params)
-        params_str = ','.join(rule_params)
+        params_str = ', '.join(rule_params)
         id = self._next_id()
         output.write('def {}_{}_fn({}):\n'.format(name, id, params_str))
 
@@ -557,19 +557,26 @@ class Metagrammar(object):
 
     def _write_rule_choice(self, output, prod, base_indent):
         for idx, term in enumerate(prod):
+            if term[0] is not None:
+                assign = '{} = '.format(term[0])
+            else:
+                assign = ''
+            var = ''
+
             if term.typ == 'Variable':
                 var = 'node.children[{}]'.format(idx)
                 params = [var]
                 if term.params:
                     params.extend(term.params)
-                params_str = ','.join(params)
+                params_str = ', '.join(params)
 
-                if term[0] is not None:
-                    assign = '{} = '.format(term[0])
-                else:
-                    assign = ''
                 output.write('{}{}{}.fn({})\n'.format(
                     base_indent, assign, var, params_str))
+            else:
+                var = 'node.children[{}].data.value'.format(idx)
+
+                output.write('{}{}{}\n'.format(
+                    base_indent, assign, var))
 
     def _next_id(self):
         self.rule_id += 1

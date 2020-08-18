@@ -17,8 +17,11 @@ SKIP: "\s"
 # Top level rules is donated with a !
 # Exactly one top level rule must be given
 !Formula():
+    begin:
+        typ = 'top level'
     expansion:
-        result = Expr()
+        # Expr has a parameter that must be passed
+        result = Expr(typ)
     end:
         print(result)
 
@@ -28,45 +31,18 @@ SKIP: "\s"
 # 'begin' describes a Python code that runs before the rule is visited
 # 'end' describes a Python code that runs after the rule is visited
 
-# 'literal'
-# "regex"
-# Token
-# Rule(param1, param2)
-# a = 'literal'
-# a = "regex"
-# a = Token
-# a = Rule(param1, param2)
-
-# Test():
-#     expansion:
-#         '(', a = Expr(), ')' |
-#         a = Number()
-#     expansion:
-#         '(', a = Expr(), ')'
-#         | a = Number()
-#     expansion:
-#         '('
-#         ,
-#         a = Expr(), ')'
-#         |
-#         a = Number()
-#     expansion:
-#         a = Term() |
-#         a = Expr(), op = OpExpr,
-#         b = Term()
-#     expansion:
-#         a = Term() | a = Expr(), op = OpExpr, b = Term()
-
-
-Expr():
+# Production rules can have parameters (id list) that will be expected when given the expansion
+Expr(typ):
     begin:
+        print(typ)
         a = 0
         b = 0
         op = '+'
+        typ = 'continuous level'
 
     expansion:
         a = Term() |
-        a = Expr(), op = OpExpr,
+        a = Expr(typ), op = OpExpr,
         b = Term()
 
     end:
@@ -92,14 +68,18 @@ Term():
             return a / b
 
 Factor():
+    begin:
+        typ = 'sub level'
     expansion:
         a = Number() |
-        '(', a = Expr(), ')'
+        '(', a = Expr(typ), ')'
     end:
         return a
 
 Number():
     expansion:
-        num = Num
+        # Both versions work
+        # num = Num
+        num = "[0-9]+"
     end:
         return int(num)
