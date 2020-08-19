@@ -600,32 +600,6 @@ def main():
     mg = Metagrammar()
     mg.process_grammar(input_file, output_file)
 
-    # Testing
-    # import importlib
-    # from earley import Parser
-
-    # module = importlib.import_module('this')
-    # g = module.grammar
-
-    # print('------------CREATED GRAMMAR------------')
-    # # print('Delim option: ' + g.delim)
-    # print('Terminals: ' + repr(g.terminals))
-    # print('Rules:')
-    # for rule in g.rules:
-    #     print(rule)
-    #     # if rule.fn:
-    #     #     print('Functions: ' + repr(rule.fn))
-
-    # print('Top rule: ' + repr(g.top_rule))
-    # print('Parsing input:')
-    # parser = Parser(g)
-    # res = parser.parse(input())
-    # # print(repr(parser.tokens))
-    # for r in res:
-    #     r.print()
-    #     # print('Walking')
-    #     r.walk()
-
 
 if __name__ == '__main__':
     main()
